@@ -50,10 +50,10 @@ const unsigned int MAX_DIST = 23200; // Anything over 400 cm (23200 us pulse) is
 //Kalman filter setup
 double last_var = 999;
 double process_noise = 1;
-double last_est_rightIR=0;
-double last_est_leftIR=0;
-double last_est_IR1=0;
-double last_est_IR2=0;
+double last_est_rightIR = 0;
+double last_est_leftIR = 0;
+double last_est_IR1 = 0;
+double last_est_IR2 = 0;
 //Serial Pointer
 HardwareSerial *SerialCom;
 
@@ -121,38 +121,38 @@ STATE running() {
   fast_flash_double_LED_builtin();
 
   /*--------------------------------COURSE START--------------------------------*/
-  while(1){
-  IR1_read();
-  IR2_read();
-  leftIR_read();
-  rightIR_read();
+  while (1) {
+    IR1_read();
+    IR2_read();
+    leftIR_read();
+    rightIR_read();
   }
-//  Serial.println("Turn by angle starting...");
-//  TurnByAngle(90);
-//  Serial.println("Turn by angle finished");
-//  delay(1000);
-//  driveToWall();                                    //move forward until detecting a wall
-//  delay(1000);
-////  straighten();                                     //straighten up 90 degrees to the wall
-// TurnByAngle(90);                                             //turn 90 degrees to the right
-//  delay(1000);
-//  driveToWall();                                    //move forward until detecting a wall, now robot will be in a corner
-//  //  straighten();                                     //straighten up 90 degrees to the wall
-//  delay(1000);
-// TurnByAngle(90);                                             //turn 90 degrees to the right to find out which orientation robot is in
-//  IR1_distance = IR1_read();                        //measure the distance to the wall to figure out orientation
-//  IR2_distance = IR2_read();
-//  if ((IR1_distance < 140) || (IR2_distance < 140)) {
-//   TurnByAngle(90);                                           //TO BE TUNED!! if the wall is less than x, need to turn again before completing course
-//  }
-//  driveToWall();                                   //continue move forward until detecting a wall
-//  float leftDistance = leftIR_read();              //check distance to the left of the robot to determine CW / CCW direction
-//  if (leftDistance < 25) {
-//  CWcorner();                                    //if wall is on the left of the robot, complete CW course
-//  }
-//  else {
-//    CCWcorner();                                   //else the wall is on the right, so complete CCW course
-//  }
+  //  Serial.println("Turn by angle starting...");
+  //  TurnByAngle(90);
+  //  Serial.println("Turn by angle finished");
+  //  delay(1000);
+  //  driveToWall();                                    //move forward until detecting a wall
+  //  delay(1000);
+  ////  straighten();                                     //straighten up 90 degrees to the wall
+  // TurnByAngle(90);                                             //turn 90 degrees to the right
+  //  delay(1000);
+  //  driveToWall();                                    //move forward until detecting a wall, now robot will be in a corner
+  //  //  straighten();                                     //straighten up 90 degrees to the wall
+  //  delay(1000);
+  // TurnByAngle(90);                                             //turn 90 degrees to the right to find out which orientation robot is in
+  //  IR1_distance = IR1_read();                        //measure the distance to the wall to figure out orientation
+  //  IR2_distance = IR2_read();
+  //  if ((IR1_distance < 140) || (IR2_distance < 140)) {
+  //   TurnByAngle(90);                                           //TO BE TUNED!! if the wall is less than x, need to turn again before completing course
+  //  }
+  //  driveToWall();                                   //continue move forward until detecting a wall
+  //  float leftDistance = leftIR_read();              //check distance to the left of the robot to determine CW / CCW direction
+  //  if (leftDistance < 25) {
+  //  CWcorner();                                    //if wall is on the left of the robot, complete CW course
+  //  }
+  //  else {
+  //    CCWcorner();                                   //else the wall is on the right, so complete CCW course
+  //  }
   stop();
   return STOPPED;
   /*--------------------------------COURSE END--------------------------------*/
@@ -173,8 +173,8 @@ float IR1_read()
   int signalADC = analogRead(IR1);
   //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 9380 * pow(signalADC, -1.11);
-  est = Kalman(distance, last_est_IR1,1);
-  last_est_IR1=est;
+  est = Kalman(distance, last_est_IR1, 1);
+  last_est_IR1 = est;
   Serial.print("Distance reading for IR1 (in cm): ");
   Serial.println(est);
   delay(100); //Delay 0.1 second
@@ -187,8 +187,8 @@ float IR2_read()
   int signalADC = analogRead(IR2);
   //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 2551 * pow(signalADC, -0.885);
-  est = Kalman(distance, last_est_IR2,1);//Kalman filter
-  last_est_IR2=est;
+  est = Kalman(distance, last_est_IR2, 1); //Kalman filter
+  last_est_IR2 = est;
   Serial.print("Distance reading for IR2 (in cm): ");
   Serial.println(est);
   delay(100); //Delay 0.1 second
@@ -201,8 +201,8 @@ float leftIR_read()
   int signalADC = analogRead(leftIR);
   //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 2550 * pow(signalADC, -1.01);
-  est = Kalman(distance, last_est_leftIR,1);//Kalman filter
-  last_est_leftIR=est;
+  est = Kalman(distance, last_est_leftIR, 1); //Kalman filter
+  last_est_leftIR = est;
   Serial.print("Distance reading for left IR (in cm): ");
   Serial.println(est);
   delay(100); //Delay 0.1 second
@@ -215,23 +215,23 @@ float rightIR_read()
   int signalADC = analogRead(rightIR);
   //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 1788 * pow(signalADC, -0.924);
-  est = Kalman(distance, last_est_rightIR,1); //Kalman filter
-  last_est_rightIR=est;
+  est = Kalman(distance, last_est_rightIR, 1); //Kalman filter
+  last_est_rightIR = est;
   Serial.print("Distance reading for right IR (in cm): ");
   Serial.println(est);
   delay(100); //Delay 0.1 second
   return est;
 }
 
-double Kalman(double rawdata, double prev_est, double sensor_noise){   // Kalman Filter
+double Kalman(double rawdata, double prev_est, double sensor_noise) {  // Kalman Filter
   double a_priori_est, a_post_est, a_priori_var, a_post_var, kalman_gain;
 
-  a_priori_est = prev_est;  
-  a_priori_var = last_var + process_noise; 
+  a_priori_est = prev_est;
+  a_priori_var = last_var + process_noise;
 
-  kalman_gain = a_priori_var/(a_priori_var+sensor_noise);
-  a_post_est = a_priori_est + kalman_gain*(rawdata-a_priori_est);
-  a_post_var = (1- kalman_gain)*a_priori_var;
+  kalman_gain = a_priori_var / (a_priori_var + sensor_noise);
+  a_post_est = a_priori_est + kalman_gain * (rawdata - a_priori_est);
+  a_post_var = (1 - kalman_gain) * a_priori_var;
   last_var = a_post_var;
   return a_post_est;
 }
@@ -264,12 +264,12 @@ float gyro_read()
     currentAngle -= 360;
   }
 
-//  Serial.print("Potentiometre ");
-//  Serial.println(analogRead(sensorPin));
-//  Serial.print("Angular velocity: ");
-//  Serial.println(angularVelocity);
-//  Serial.print("Current angle: ");
-//  Serial.println(currentAngle);
+  //  Serial.print("Potentiometre ");
+  //  Serial.println(analogRead(sensorPin));
+  //  Serial.print("Angular velocity: ");
+  //  Serial.println(angularVelocity);
+  //  Serial.print("Current angle: ");
+  //  Serial.println(currentAngle);
 
   // control the time per loop
   delay (T);
@@ -366,7 +366,7 @@ void straighten()
     u = Kp * error + Ki * integral; //calculate the control effort
     speed = (int)constrain(u, -500, 500);
 
-            left_font_motor.writeMicroseconds(1500 - speed);
+    left_font_motor.writeMicroseconds(1500 - speed);
     left_rear_motor.writeMicroseconds(1500 - speed);
     right_rear_motor.writeMicroseconds(1500 - speed);
     right_font_motor.writeMicroseconds(1500 - speed);
@@ -380,9 +380,9 @@ void straighten()
 void CWcorner()
 {
   //Corner number 1
- TurnByAngle(90);
+  TurnByAngle(90);
   //Forward 22.5cm
- TurnByAngle(90);
+  TurnByAngle(90);
   //2m straight
   driveToWall();
   //Corner number 2
@@ -392,9 +392,9 @@ void CWcorner()
   //2m straight
   driveToWall();
   //Corner number 3
- TurnByAngle(90);
+  TurnByAngle(90);
   //forward 22.5cm
- TurnByAngle(90);
+  TurnByAngle(90);
   //2m straight
   driveToWall();
   //Corner number 4
@@ -415,9 +415,9 @@ void CCWcorner()
   //2m straight
   driveToWall();
   //Corner number 2
- TurnByAngle(90);
+  TurnByAngle(90);
   //forward 22.5cm
- TurnByAngle(90);
+  TurnByAngle(90);
   //2m straight
   driveToWall();
   //Corner number 3
@@ -427,9 +427,9 @@ void CCWcorner()
   //2m straight
   driveToWall();
   //Corner number 4
- TurnByAngle(90);
+  TurnByAngle(90);
   //forward 22.5cm
- TurnByAngle(90);
+  TurnByAngle(90);
   //2m straight
   driveToWall();
 }
@@ -646,47 +646,47 @@ void stop() //Stop
 // Continuously move platform forward.
 void forward(float initialAngle)
 {
-    float finalAngle = gyro_read();
-    float angleMoved = finalAngle - initialAngle;
-    if (angleMoved > 90){
-      angleMoved = 360 - angleMoved;
-    }
-    Serial.print("Angle moved value is: ");
-    Serial.println(angleMoved);
-    int k = 10;
-    //+VE IS CW 
-    left_font_motor.writeMicroseconds(1500 + (speed_val+angleMoved*k));
-    left_rear_motor.writeMicroseconds(1500 + (speed_val+angleMoved*k));
-    right_rear_motor.writeMicroseconds(1500 - (speed_val-angleMoved*k));
-    right_font_motor.writeMicroseconds(1500 - (speed_val-angleMoved*k));  
+  float finalAngle = gyro_read();
+  float angleMoved = finalAngle - initialAngle;
+  if (angleMoved > 90) {
+    angleMoved = 360 - angleMoved;
+  }
+  Serial.print("Angle moved value is: ");
+  Serial.println(angleMoved);
+  int k = 10;
+  //+VE IS CW
+  left_font_motor.writeMicroseconds(1500 + (speed_val + angleMoved * k));
+  left_rear_motor.writeMicroseconds(1500 + (speed_val + angleMoved * k));
+  right_rear_motor.writeMicroseconds(1500 - (speed_val - angleMoved * k));
+  right_font_motor.writeMicroseconds(1500 - (speed_val - angleMoved * k));
 }
 
 // Rotate platform by a specified angle in degrees using PI control (+ve input = clockwise, -ve input = counter-clockwise).
 void TurnByAngle(int turnAngle)
 {
   //Serial.println("Turning clockwise 90 degrees started...");
-//  currentAngle = 0;
+  //  currentAngle = 0;
   // Initialise variables
   float error, u, lastError, integral, derivative, currentAng, speed = 0;
   float integralLimit = 30; // Set max error boundary for integral gain to be applied to control system.
   float gyroAngle = gyro_read(); // Fetch and store current angle reading before turning.
   float initialAngle = gyro_read();
-  float targetAngle = constrain(turnAngle,-180,180); // Limit maximum turn angle to +ve or -ve 180 degrees.
+  float targetAngle = constrain(turnAngle, -180, 180); // Limit maximum turn angle to +ve or -ve 180 degrees.
   float Kp = 6; // Initialise proportional gain.
   float Ki = 0.05; // Initialise integral gain
   int timer = 500; // Initialise tolerance timer.
-  int direction = turnAngle/abs(turnAngle);
+  int direction = turnAngle / abs(turnAngle);
   int wrapCheck = 0;
   Serial.println((String)"initial angle is: " + initialAngle + (String)", target angle is: " + targetAngle);
   while (timer > 0) {
 
     // Check if gyroscope angle reading wrapped to 0 while turning clockwise.
-    if (((gyroAngle < initialAngle) && (turnAngle > 0))){
+    if (((gyroAngle < initialAngle) && (turnAngle > 0))) {
       currentAng = gyroAngle - initialAngle + 360.0; // +360 degree angle correction to relative current angle reading
       wrapCheck = 0;
-    } 
+    }
     // Otherwise, check if gyroscope angle reading wrapped to 359 while turning counter-clockwise.
-    else if (((gyroAngle > initialAngle) && (turnAngle < 0))){
+    else if (((gyroAngle > initialAngle) && (turnAngle < 0))) {
       currentAng = gyroAngle - initialAngle - 360.0; // -360 degree angle correction to relative current angle reading
       wrapCheck = 1;
     }
@@ -696,17 +696,17 @@ void TurnByAngle(int turnAngle)
     }
 
     error = targetAngle - currentAng; // Calculate error for desired angle.
-    if (abs(error) > abs(targetAngle)){
-      error = (360 - abs(error))*direction; 
+    if (abs(error) > abs(targetAngle)) {
+      error = (360 - abs(error)) * direction;
     }
 
     Serial.println((String)"CurrentAng is: " + currentAng + (String)", Error is: " + error + (String)", gyro reading is: " + gyroAngle + (String)", wrap check = " + wrapCheck);
     // Stop integrating if actuators are saturated.
-    if (abs(error) < integralLimit){
-      integral = integral + error*0.1; // Integrate the error with respect to loop frequency (~10Hz).
+    if (abs(error) < integralLimit) {
+      integral = integral + error * 0.1; // Integrate the error with respect to loop frequency (~10Hz).
     }
     else {
-      integral = 0; // Disable integral 
+      integral = 0; // Disable integral
     }
 
     // Calculate derivative of error.
@@ -714,16 +714,16 @@ void TurnByAngle(int turnAngle)
     lastError = error; // Update last error calculated.
 
     // Loop exits if error remains in steady state for at least 500ms.
-    if ((derivative == 0)&&(error < 5)){
+    if ((derivative == 0) && (error < 5)) {
       timer -= 100;
     }
     else {
       timer = 500;
     }
 
-    u = Kp*error + Ki*integral; // Calculate the control effort to reach target distance.
-    speed = (int) constrain(u,-500,500);
-    //Note: 
+    u = Kp * error + Ki * integral; // Calculate the control effort to reach target distance.
+    speed = (int) constrain(u, -500, 500);
+    //Note:
     left_font_motor.writeMicroseconds(1500 + speed);
     left_rear_motor.writeMicroseconds(1500 + speed);
     right_rear_motor.writeMicroseconds(1500 + speed);
