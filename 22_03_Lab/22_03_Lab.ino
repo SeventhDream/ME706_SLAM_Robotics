@@ -340,39 +340,41 @@ void straighten() //UNDER CONSTRUCTION
 {
   float IR1_dist = IR1_read();//right
   float IR2_dist = IR2_read();//left
-  float error = IR1_dist - IR2_dist;
-  float kp = 1;
+  float error, u, lastError, integral, derivative, speed = 0;
+  float integralLimit = 30;
+  //float error = IR1_dist - IR2_dist;
+  float Kp = 1;
+  float Ki = 1;
+  int timer = 500;
 
-  while (error > 1) { //calibrate this later
-    if (IR1_dist < IR2_dist) { //robot's right corner is closer to the wall, so turn cw
-      left_font_motor.writeMicroseconds(1800);
-      left_rear_motor.writeMicroseconds(1800);
-      right_rear_motor.writeMicroseconds(1800);
-      right_font_motor.writeMicroseconds(1800);
-      IR1_dist = IR1_read();
-      IR2_dist = IR2_read();
-      error = IR1_dist - IR2_dist;
-    } else { //robot's left corner is closer to the wall, so turn ccw
-      left_font_motor.writeMicroseconds(1200);
-      left_rear_motor.writeMicroseconds(1200);
-      right_rear_motor.writeMicroseconds(1200);
-      right_font_motor.writeMicroseconds(1200);
-      IR1_dist = IR1_read();
-      IR2_dist = IR2_read();
-      error = IR1_dist - IR2_dist;
+  while (timer > 0) {
+
+    error = IR1_dist - IR2_dist; //right minus left
+
+    if (abs(error) < integralLimit) { //check for integrator saturation
+      intergral = integral + error * 0.1;
+    } else {
+      integral = 0;
     }
-  }
 
-  if (IR1_dist < 15) { //calibrate this later
-    left_font_motor.writeMicroseconds(1500 - speed_val);
-    left_rear_motor.writeMicroseconds(1500 - speed_val);
-    right_rear_motor.writeMicroseconds(1500 + speed_val);
-    right_font_motor.writeMicroseconds(1500 + speed_val);
-    delay(500); // to back up a bit?
-  }
+    if (abs(error) < 1) { //calibrate this later
+      timer -= 100;
+    } else {
+      timer = 500;
+    }
 
+    u = Kp * error + Ki * integral; //calculate the control effort
+    speed = (int)constrain(u, -500, 500)
+
+            left_font_motor.writeMicroseconds(1500 - speed);
+    left_rear_motor.writeMicroseconds(1500 - speed);
+    right_rear_motor.writeMicroseconds(1500 - speed);
+    right_font_motor.writeMicroseconds(1500 - speed);
+    delay(100);
+    IR1_dist = IR1_read();
+    IR2_dist = IR2_read();
+  }
   stop();
-
 }
 /*-------------------------Motion Function for when the first corner is a CW turn-------------------------*/
 void CWcorner()
