@@ -3,7 +3,6 @@
 //#define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 
-// This is a new comment!!!!
 //State machine states
 enum STATE {
   INITIALISING,
@@ -11,6 +10,7 @@ enum STATE {
   STOPPED
 };
 
+// This is a comment (hello);
 //Motor Control Setup
 const byte left_front = 46;
 const byte left_rear = 47;
