@@ -352,7 +352,7 @@ void straighten()
     error = IR1_dist - IR2_dist; //right minus left
 
     if (abs(error) < integralLimit) { //check for integrator saturation
-      intergral = integral + error * 0.1;
+      integral = integral + error * 0.1;
     } else {
       integral = 0;
     }
@@ -364,7 +364,7 @@ void straighten()
     }
 
     u = Kp * error + Ki * integral; //calculate the control effort
-    speed = (int)constrain(u, -500, 500)
+    speed = (int)constrain(u, -500, 500);
 
             left_font_motor.writeMicroseconds(1500 - speed);
     left_rear_motor.writeMicroseconds(1500 - speed);
