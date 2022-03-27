@@ -256,10 +256,9 @@ double Kalman(double rawdata, double prev_est, double sensor_noise) {  // Kalman
 
   kalman_gain = a_priori_var / (a_priori_var + sensor_noise);
   a_post_est = a_priori_est + kalman_gain * (rawdata - a_priori_est);
-  a_post_est = constrain(a_post_est, 0, 999);
+  a_post_est = constrain(a_post_est, 0, 999); // constrain output to prevent infinite values.
   a_post_var = (1 - kalman_gain) * a_priori_var;
   last_var = a_post_var;
-  Serial.println((String)"kalman gain: " + kalman_gain + (String)" previous est: " + prev_est + (String)" raw: " + rawdata);
   return a_post_est;
   
 }
