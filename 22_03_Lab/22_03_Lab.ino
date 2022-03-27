@@ -124,7 +124,7 @@ STATE running() {
   fast_flash_double_LED_builtin();
 
   /*--------------------------------COURSE START--------------------------------*/
-  while (1) {
+  /*while (1) {
     IR1_distance = IR1_read();
     IR2_distance = IR2_read();
     leftIR_distance = leftIR_read();
@@ -132,6 +132,7 @@ STATE running() {
 
     Serial.println((String)"IR1: " + IR1_distance + (String)" IR2: " + IR2_distance + " leftIR: " + leftIR_distance + " rightIR: " + rightIR_distance);
   } 
+  */
   //  Serial.println("Turn by angle starting...");
   //  TurnByAngle(90);
   //  Serial.println("Turn by angle finished");
