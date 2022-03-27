@@ -121,12 +121,10 @@ STATE running() {
   fast_flash_double_LED_builtin();
 
   /*--------------------------------COURSE START--------------------------------*/
-  while (1) {
-    IR1_read();
-    IR2_read();
-    leftIR_read();
-    rightIR_read();
-  }
+
+ FindCorner();
+ Serial.println("Finished the course.");
+ delay(10000);
   //  Serial.println("Turn by angle starting...");
   //  TurnByAngle(90);
   //  Serial.println("Turn by angle finished");
@@ -318,6 +316,177 @@ float gyro_velocity()
 
 /*--------------------------------MOTOR MOVEMENT FUNCTIONS--------------------------------*/
 
+void FindCorner()
+{
+  float ultraDist = HC_SR04_range();
+  float frontLeft = IR2_read();
+  float frontRight = IR1_read();
+  float backLeft = leftIR_read();
+  float backRight = rightIR_read();
+  float iAngle = gyro_read();
+
+  //Orientate the robot to face a wall 60cm away
+  while (ultraDist > 60) {
+    cw();
+    ultraDist = HC_SR04_range();
+  }
+  stop();
+
+  //Drive straight until any sensor sees a wall 15cm away
+  while ((ultraDist > 15) || (frontLeft > 15) || (backLeft > 15) || (frontRight > 15) || (backRight > 15)) {
+    iAngle = gyro_read();
+    forward(iAngle);
+    ultraDist = HC_SR04_range();
+    frontLeft = IR2_read();
+    frontRight = IR1_read();
+    backLeft = leftIR_read();
+    backRight = rightIR_read();
+  }
+  stop();
+
+  if (frontRight < 20) {
+    CCWstraighten();
+  } else if (frontLeft < 20) {
+    CWstraighten();
+  } else if ((frontLeft<200) && (frontRight<200)) {
+    if (frontLeft > frontRight) {
+      while (frontRight > 15.2) { //calibrate later
+        strafe_right();
+        frontRight = IR1_read();
+      }
+    } else if (frontRight > frontLeft) {
+      while (frontLeft > 15.2) { //calibrate later
+        strafe_left();
+        frontLeft = IR2_read();
+      }
+    }
+  } else if ((frontLeft>250) && (frontRight>250)) {
+    TurnByAngle(90);
+
+  } else if ((frontLeft<250) && (frontRight>250)) {
+    while (frontLeft > 15.2) { //calibrate later
+      strafe_left();
+      frontLeft = IR2_read();
+    }
+  } else if ((frontRight<250) && (frontLeft>250)) {
+    while (frontRight > 15.2) { //calibrate later
+      strafe_right();
+      frontRight = IR1_read();
+    }
+  }
+  stop();
+
+  while (ultraDist > 15) {
+    iAngle = gyro_read();
+    forward(iAngle);
+    ultraDist = HC_SR04_range();
+  }
+  stop();
+
+  //Now we are in a corner
+  if (leftIR_read() < 20) {
+    TurnByAngle(90);
+    ultraDist = HC_SR04_range();
+    if (ultraDist > 130) {
+      return;
+    } else {
+      TurnByAngle(90);
+      return;
+    }
+  } else {
+    TurnByAngle(-90);
+    ultraDist = HC_SR04_range();
+    if (ultraDist > 130) {
+      return;
+    } else {
+      TurnByAngle(-90);
+      return;
+    }
+  }
+}
+
+
+void cw ()
+{
+  left_font_motor.writeMicroseconds(1500 + speed_val);
+  left_rear_motor.writeMicroseconds(1500 + speed_val);
+  right_rear_motor.writeMicroseconds(1500 + speed_val);
+  right_font_motor.writeMicroseconds(1500 + speed_val);
+}
+
+void CWstraighten() {
+  float frontL = IR2_read();
+  float backL = leftIR_read();
+  float error = frontL - backL;
+
+  while (abs(error) > 0.2) { //calibrate this later
+    cw();
+    frontL = IR2_read();
+    backL = leftIR_read();
+    error = frontL - backL;
+  }
+  //now the robot is aligned to the wall, check for 15cm distance
+  while (abs(15 - frontL) > 0.2) { //calibrate this later
+    if (frontL < 15) {
+      strafe_right();
+      frontL = IR2_read();
+    } else if (frontL > 15) {
+      strafe_left();
+      frontL = IR2_read();
+    }
+  }
+  stop();
+}
+
+void CCWstraighten() {
+  float frontR = IR1_read();
+  float backR = rightIR_read();
+  float error = frontR - backR;
+
+  while (abs(error) > 0.2) { //calibrate this later
+    ccw();
+    frontR = IR1_read();
+    backR = rightIR_read();
+    error = frontR - backR;
+  }
+  //now the robot is aligned to the wall, check for 15cm distance
+  while (abs(15 - frontR) > 0.2) { //calibrate this later
+    if (frontR < 15) {
+      strafe_left();
+      frontR = IR1_read();
+    } else if (frontR > 15) {
+      strafe_right();
+      frontR = IR1_read();
+    }
+  }
+  stop();
+}
+
+void strafe_left ()
+{
+  left_font_motor.writeMicroseconds(1500 - speed_val);
+  left_rear_motor.writeMicroseconds(1500 + speed_val);
+  right_rear_motor.writeMicroseconds(1500 + speed_val);
+  right_font_motor.writeMicroseconds(1500 - speed_val);
+}
+
+void strafe_right ()
+{
+  left_font_motor.writeMicroseconds(1500 + speed_val);
+  left_rear_motor.writeMicroseconds(1500 - speed_val);
+  right_rear_motor.writeMicroseconds(1500 - speed_val);
+  right_font_motor.writeMicroseconds(1500 + speed_val);
+}
+
+void ccw ()
+{
+  left_font_motor.writeMicroseconds(1500 - speed_val);
+  left_rear_motor.writeMicroseconds(1500 - speed_val);
+  right_rear_motor.writeMicroseconds(1500 - speed_val);
+  right_font_motor.writeMicroseconds(1500 - speed_val);
+}
+
+
 //Drive straight until hitting a wall
 void driveToWall()
 {
@@ -506,7 +675,7 @@ void speed_change_smooth()
 
 //Sonar Sensor
 #ifndef NO_HC-SR04
-void HC_SR04_range()
+float HC_SR04_range()
 {
   unsigned long t1;
   unsigned long t2;
@@ -561,6 +730,8 @@ void HC_SR04_range()
     SerialCom->print(cm);
     SerialCom->println("cm");
   }
+
+  return cm;
 }
 #endif
 
