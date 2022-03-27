@@ -114,7 +114,7 @@ STATE initialising() {
 }
 
 STATE running() {
-
+  // This is my new comment! :)
   float IR1_distance;
   float IR2_distance;
   float leftIR_distance;
