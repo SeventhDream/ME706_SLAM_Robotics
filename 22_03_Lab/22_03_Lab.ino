@@ -117,16 +117,21 @@ STATE running() {
 
   float IR1_distance;
   float IR2_distance;
+  float leftIR_distance;
+  float rightIR_distance;
+  
   static unsigned long previous_millis;
   fast_flash_double_LED_builtin();
 
   /*--------------------------------COURSE START--------------------------------*/
   while (1) {
-    IR1_read();
-    IR2_read();
-    leftIR_read();
-    rightIR_read();
-  }
+    IR1_distance = IR1_read();
+    IR2_distance = IR2_read();
+    leftIR_distance = leftIR_read();
+    rightIR_distance = rightIR_read();
+
+    Serial.println((String)"IR1: " + IR1_distance + (String)" IR2: " + IR2_distance + " leftIR: " + leftIR_distance + " rightIR: " + rightIR_distance);
+  } 
   //  Serial.println("Turn by angle starting...");
   //  TurnByAngle(90);
   //  Serial.println("Turn by angle finished");
@@ -173,10 +178,15 @@ float IR1_read()
   int signalADC = analogRead(IR1);
   //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 9380 * pow(signalADC, -1.11);
-  est = Kalman(distance, last_est_IR1, 1);
-  last_est_IR1 = est;
-  Serial.print("Distance reading for IR1 (in cm): ");
-  Serial.println(est);
+  est = Kalman(distance, last_est_IR1, 2);
+  if (isnan(est)){
+  last_est_IR1 = 0;
+  }
+  else {
+    last_est_IR1 = est;
+  }
+  //Serial.print("Distance reading for IR1 (in cm): ");
+  //Serial.println(est);
   delay(100); //Delay 0.1 second
   return est;
 }
@@ -187,10 +197,15 @@ float IR2_read()
   int signalADC = analogRead(IR2);
   //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 2551 * pow(signalADC, -0.885);
-  est = Kalman(distance, last_est_IR2, 1); //Kalman filter
-  last_est_IR2 = est;
-  Serial.print("Distance reading for IR2 (in cm): ");
-  Serial.println(est);
+  est = Kalman(distance, last_est_IR2, 2); //Kalman filter
+  if (isnan(est)){
+  last_est_IR2 = 0;
+  }
+  else {
+    last_est_IR2 = est;
+  }
+  //Serial.print("Distance reading for IR2 (in cm): ");
+  //Serial.println(est);
   delay(100); //Delay 0.1 second
   return est;
 }
@@ -201,10 +216,15 @@ float leftIR_read()
   int signalADC = analogRead(leftIR);
   //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 2550 * pow(signalADC, -1.01);
-  est = Kalman(distance, last_est_leftIR, 1); //Kalman filter
-  last_est_leftIR = est;
-  Serial.print("Distance reading for left IR (in cm): ");
-  Serial.println(est);
+  est = Kalman(distance, last_est_leftIR, 2); //Kalman filter
+  if (isnan(est)){
+  last_est_leftIR = 0;
+  }
+  else {
+    last_est_leftIR = est;
+  }
+  //Serial.print("Distance reading for left IR (in cm): ");
+  //Serial.println(est);
   delay(100); //Delay 0.1 second
   return est;
 }
@@ -215,10 +235,15 @@ float rightIR_read()
   int signalADC = analogRead(rightIR);
   //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 1788 * pow(signalADC, -0.924);
-  est = Kalman(distance, last_est_rightIR, 1); //Kalman filter
-  last_est_rightIR = est;
-  Serial.print("Distance reading for right IR (in cm): ");
-  Serial.println(est);
+  est = Kalman(distance, last_est_rightIR, 2); //Kalman filter
+  if (isnan(est)){
+  last_est_rightIR = 0;
+  }
+  else {
+    last_est_rightIR = est;
+  }
+  //Serial.print("Distance reading for right IR (in cm): ");
+  //Serial.println(est);
   delay(100); //Delay 0.1 second
   return est;
 }
@@ -231,9 +256,12 @@ double Kalman(double rawdata, double prev_est, double sensor_noise) {  // Kalman
 
   kalman_gain = a_priori_var / (a_priori_var + sensor_noise);
   a_post_est = a_priori_est + kalman_gain * (rawdata - a_priori_est);
+  a_post_est = constrain(a_post_est, 0, 999);
   a_post_var = (1 - kalman_gain) * a_priori_var;
   last_var = a_post_var;
+  Serial.println((String)"kalman gain: " + kalman_gain + (String)" previous est: " + prev_est + (String)" raw: " + rawdata);
   return a_post_est;
+  
 }
 
 /*--------------------------------READING GYRO SENSOR--------------------------------*/
