@@ -539,46 +539,7 @@ void driveToWall()
   stop();
 }
 
-void straighten()
-{
-  float IR1_dist = IR1_read();//right
-  float IR2_dist = IR2_read();//left
-  float error, u, lastError, integral, derivative, speed = 0;
-  float integralLimit = 30;
-  //float error = IR1_dist - IR2_dist;
-  float Kp = 1;
-  float Ki = 1;
-  int timer = 500;
 
-  while (timer > 0) {
-
-    error = IR1_dist - IR2_dist; //right minus left
-
-    if (abs(error) < integralLimit) { //check for integrator saturation
-      integral = integral + error * 0.1;
-    } else {
-      integral = 0;
-    }
-
-    if (abs(error) < 1) { //calibrate this later
-      timer -= 100;
-    } else {
-      timer = 500;
-    }
-
-    u = Kp * error + Ki * integral; //calculate the control effort
-    speed = (int)constrain(u, -500, 500);
-
-    left_font_motor.writeMicroseconds(1500 - speed);
-    left_rear_motor.writeMicroseconds(1500 - speed);
-    right_rear_motor.writeMicroseconds(1500 - speed);
-    right_font_motor.writeMicroseconds(1500 - speed);
-    delay(100);
-    IR1_dist = IR1_read();
-    IR2_dist = IR2_read();
-  }
-  stop();
-}
 /*-------------------------Motion Function for when the first corner is a CW turn-------------------------*/
 void CWcorner()
 {
@@ -864,6 +825,124 @@ void forward(float initialAngle)
   left_rear_motor.writeMicroseconds(1500 + (speed_val + angleMoved * k));
   right_rear_motor.writeMicroseconds(1500 - (speed_val - angleMoved * k));
   right_font_motor.writeMicroseconds(1500 - (speed_val - angleMoved * k));
+}
+
+void straighten()
+{
+  float IR1_dist = IR1_read();//right
+  float IR2_dist = IR2_read();//left
+  float error, u, lastError, integral, derivative, speed = 0;
+  float integralLimit = 30;
+  //float error = IR1_dist - IR2_dist;
+  float Kp = 1;
+  float Ki = 1;
+  int timer = 500;
+
+  while (timer > 0) {
+
+    error = IR1_dist - IR2_dist; //right minus left
+
+    if (abs(error) < integralLimit) { //check for integrator saturation
+      integral = integral + error * 0.1;
+    } else {
+      integral = 0;
+    }
+
+    if (abs(error) < 1) { //calibrate this later
+      timer -= 100;
+    } else {
+      timer = 500;
+    }
+
+    u = Kp * error + Ki * integral; //calculate the control effort
+    speed = (int)constrain(u, -500, 500);
+
+    left_font_motor.writeMicroseconds(1500 - speed);
+    left_rear_motor.writeMicroseconds(1500 - speed);
+    right_rear_motor.writeMicroseconds(1500 - speed);
+    right_font_motor.writeMicroseconds(1500 - speed);
+    delay(100);
+    IR1_dist = IR1_read();
+    IR2_dist = IR2_read();
+  }
+  stop();
+}
+
+void WallFolow() {
+  float IR_long_right = IR1_read();
+  float IR_long_left = IR2_read();
+  float IR_short_right = rightIR_read();
+  float IR_short_left = leftIR_read();  
+  float error_long, error_short, long_IR, short_IR, left, integral_long, integral_short, derivative_long, derivative_short, lastError_long, lastError_short, speed_long, speed_short = 0;
+  float u_long, u_short = 0;
+  float target = 15 - 7;
+  float tolerance = 0.5;
+  float integralLimit = 5;
+  float Ki = 0.1;
+  float Kp = 6;
+  int timer_long, timer_short = 500;;
+
+  if ((IR_long_right - target) < (IR_long_left - target)) { //indicates whether the wall is on left side or right side
+    left = 0;
+    long_IR = IR_long_right;
+    short_IR = IR_short_right;
+  }
+  else {
+    left = 1;
+    long_IR = IR_long_left;
+    short_IR = IR_short_left;
+  }
+
+  error_long = target - long_IR;
+  error_short = target - short_IR;
+//
+//  Serial.println((String)"Current Long IR is: " + long_IR + (String)", Error is: " + error_long + (String));
+//  Serial.println((String)"Current Short IR is: " + short_IR + (String)", Error is: " + error_short + (String));
+  
+    // Stop integrating if actuators are saturated.
+    if (abs(error_long) < integralLimit) {
+      integral_long = integral_long + error_long * Ki; // Integrate the error with respect to loop frequency (~10Hz).
+    }
+    else {
+      integral_long = 0; // Disable integral
+    }
+    
+    if (abs(error_short) < integralLimit) {
+      integral_short = integral_short + error_short * Ki; // Integrate the error with respect to loop frequency (~10Hz).
+    }
+    else {
+      integral_short = 0; // Disable integral
+    }
+
+    derivative_long =  error_long - lastError_long;
+    lastError_long = error_long; // Update last error calculated.
+
+    derivative_short =  error_short - lastError_short;
+    lastError_short = error_short; // Update last error calculated.
+
+    if ((derivative_long == 0) && (error_long < 0.5)) {
+      timer_long -= 100;
+    }
+    else {
+      timer_long = 500;
+    }
+    if ((derivative_short == 0) && (error_short < 0.5)) {
+      timer_short -= 100;
+    }
+    else {
+      timer_short = 500;
+    }
+    
+    u_long = Kp * error_long + Ki * integral_long; // Calculate the control effort to reach target distance.
+    speed_long = (int) constrain(u_long, -500, 500);
+
+    u_short = Kp * error_short + Ki * integral_short; // Calculate the control effort to reach target distance.
+    speed_short = (int) constrain(u_short, -500, 500);
+
+    left_font_motor.writeMicroseconds(1500 + (speed_val + speed_short));
+    left_rear_motor.writeMicroseconds(1500 + (speed_val + speed_short));
+    right_rear_motor.writeMicroseconds(1500 - (speed_val + speed_long));
+    right_font_motor.writeMicroseconds(1500 - (speed_val + speed_long));
 }
 
 // Rotate platform by a specified angle in degrees using PI control (+ve input = clockwise, -ve input = counter-clockwise).
