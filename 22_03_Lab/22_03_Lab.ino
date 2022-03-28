@@ -133,10 +133,13 @@ STATE running() {
     Serial.println((String)"IR1: " + IR1_distance + (String)" IR2: " + IR2_distance + " leftIR: " + leftIR_distance + " rightIR: " + rightIR_distance);
   } 
   */
-
- FindCorner();
+ Serial.println("Started the course.");
+ //FindCorner();
+ //CCWstraighten();
+ strafe_left();
+ delay(1000);
  Serial.println("Finished the course.");
- delay(10000);
+ delay(1000);
   //  Serial.println("Turn by angle starting...");
   //  TurnByAngle(90);
   //  Serial.println("Turn by angle finished");
@@ -183,17 +186,18 @@ float IR1_read()
   int signalADC = analogRead(IR1);
   //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 9380 * pow(signalADC, -1.11);
-  est = Kalman(distance, last_est_IR1, 2);
-  if (isnan(est)){
-  last_est_IR1 = 0;
-  }
-  else {
-    last_est_IR1 = est;
-  }
-  //Serial.print("Distance reading for IR1 (in cm): ");
-  //Serial.println(est);
+//  est = Kalman(distance, last_est_IR1, 2);
+//  if (isnan(est)){
+//  last_est_IR1 = 0;
+//  }
+//  else {
+//    last_est_IR1 = est;
+//  }
+//  Serial.print("Distance reading for front right IR1 (in cm): ");
+//  Serial.println(est);
   delay(100); //Delay 0.1 second
-  return est;
+  //return est;
+  return distance;
 }
 
 float IR2_read()
@@ -202,17 +206,19 @@ float IR2_read()
   int signalADC = analogRead(IR2);
   //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 2551 * pow(signalADC, -0.885);
-  est = Kalman(distance, last_est_IR2, 2); //Kalman filter
-  if (isnan(est)){
-  last_est_IR2 = 0;
-  }
-  else {
-    last_est_IR2 = est;
-  }
-  //Serial.print("Distance reading for IR2 (in cm): ");
-  //Serial.println(est);
+//  est = Kalman(distance, last_est_IR2, 2); //Kalman filter
+//  if (isnan(est)){
+//  last_est_IR2 = 0;
+//  }
+//  else {
+//    last_est_IR2 = est;
+//  }
+//  Serial.print("Distance reading for front left IR2 (in cm): ");
+//  Serial.print(est);
+//  Serial.print(" ; "
   delay(100); //Delay 0.1 second
-  return est;
+ // return est;
+ return distance;
 }
 
 float leftIR_read()
@@ -221,17 +227,19 @@ float leftIR_read()
   int signalADC = analogRead(leftIR);
   //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 2550 * pow(signalADC, -1.01);
-  est = Kalman(distance, last_est_leftIR, 2); //Kalman filter
-  if (isnan(est)){
-  last_est_leftIR = 0;
-  }
-  else {
-    last_est_leftIR = est;
-  }
-  //Serial.print("Distance reading for left IR (in cm): ");
-  //Serial.println(est);
+//  est = Kalman(distance, last_est_leftIR, 2); //Kalman filter
+//  if (isnan(est)){
+//  last_est_leftIR = 0;
+//  }
+//  else {
+//    last_est_leftIR = est;
+//  }
+//  Serial.print("Distance reading for back left IR (in cm): ");
+//  Serial.print(est);
+//  Serial.print(" ; ");
   delay(100); //Delay 0.1 second
-  return est;
+  return distance;
+ // return est;
 }
 
 float rightIR_read()
@@ -240,17 +248,18 @@ float rightIR_read()
   int signalADC = analogRead(rightIR);
   //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 1788 * pow(signalADC, -0.924);
-  est = Kalman(distance, last_est_rightIR, 2); //Kalman filter
-  if (isnan(est)){
-  last_est_rightIR = 0;
-  }
-  else {
-    last_est_rightIR = est;
-  }
+//  est = Kalman(distance, last_est_rightIR, 2); //Kalman filter
+//  if (isnan(est)){
+//  last_est_rightIR = 0;
+//  }
+//  else {
+//    last_est_rightIR = est;
+//  }
   //Serial.print("Distance reading for right IR (in cm): ");
   //Serial.println(est);
   delay(100); //Delay 0.1 second
-  return est;
+  return distance;
+  //return est;
 }
 
 double Kalman(double rawdata, double prev_est, double sensor_noise) {  // Kalman Filter
@@ -358,16 +367,30 @@ void FindCorner()
   float backLeft = leftIR_read();
   float backRight = rightIR_read();
   float iAngle = gyro_read();
-
+  Serial.print("Ultrasond reading is: ");
+  Serial.print(ultraDist);
+  Serial.print("  Front right IR1: ");
+  Serial.print(frontRight);
+  Serial.print("  Front left IR2: ");
+  Serial.print(frontLeft);
+  Serial.print("  Back left IR: ");
+  Serial.print(backLeft);
+  Serial.print("  Back right IR: ");
+  Serial.println(backRight);
+ 
   //Orientate the robot to face a wall 60cm away
   while (ultraDist > 60) {
+    Serial.println("Orientate the robot to face a wall 60cm away");
     cw();
     ultraDist = HC_SR04_range();
+    Serial.print("Ultrasond reading is: ");
+    Serial.println(ultraDist);
   }
   stop();
 
   //Drive straight until any sensor sees a wall 15cm away
-  while ((ultraDist > 15) || (frontLeft > 15) || (backLeft > 15) || (frontRight > 15) || (backRight > 15)) {
+  while ((ultraDist > 15) && (frontLeft > 15) && (backLeft > 15) && (frontRight > 15) && (backRight > 15)) {
+    Serial.println("Drive straight until any sensor sees a wall 15cm away");
     iAngle = gyro_read();
     forward(iAngle);
     ultraDist = HC_SR04_range();
@@ -375,10 +398,23 @@ void FindCorner()
     frontRight = IR1_read();
     backLeft = leftIR_read();
     backRight = rightIR_read();
+      Serial.print("Ultrasond reading is: ");
+  Serial.print(ultraDist);
+  Serial.print("  Front right IR1: ");
+  Serial.print(frontRight);
+  Serial.print("  Front left IR2: ");
+  Serial.print(frontLeft);
+  Serial.print("  Back left IR: ");
+  Serial.print(backLeft);
+  Serial.print("  Back right IR: ");
+  Serial.println(backRight);
   }
   stop();
 
+
+  
   if (frontRight < 20) {
+    Serial.println("Front right near wall");
     CCWstraighten();
   } else if (frontLeft < 20) {
     CWstraighten();
@@ -409,6 +445,7 @@ void FindCorner()
     }
   }
   stop();
+  //return;
 
   while (ultraDist > 15) {
     iAngle = gyro_read();
@@ -476,13 +513,23 @@ void CCWstraighten() {
   float frontR = IR1_read();
   float backR = rightIR_read();
   float error = frontR - backR;
+    Serial.print("Front right IR1: ");
+  Serial.print(frontR);
+  Serial.print("  Back right IR: ");
+  Serial.print(backR);
+  Serial.print("  Error is: ");
+  Serial.println(error);
 
-  while (abs(error) > 0.2) { //calibrate this later
-    ccw();
+  while (abs(error) > 2) { //calibrate this later
+      left_font_motor.writeMicroseconds(1400);
+  left_rear_motor.writeMicroseconds(1400);
+  right_rear_motor.writeMicroseconds(1400);
+  right_font_motor.writeMicroseconds(1400);
     frontR = IR1_read();
     backR = rightIR_read();
     error = frontR - backR;
   }
+
   //now the robot is aligned to the wall, check for 15cm distance
   while (abs(15 - frontR) > 0.2) { //calibrate this later
     if (frontR < 15) {
@@ -759,11 +806,11 @@ float HC_SR04_range()
   // Print out results
   if ( pulse_width > MAX_DIST ) {
     SerialCom->println("HC-SR04: Out of range");
-  } else {
-    SerialCom->print("HC-SR04:");
-    SerialCom->print(cm);
-    SerialCom->println("cm");
-  }
+  }// else {
+   // SerialCom->print("HC-SR04:");
+   // SerialCom->print(cm);
+   // SerialCom->println("cm");
+//  }
 
   return cm;
 }
@@ -856,8 +903,8 @@ void forward(float initialAngle)
   if (angleMoved > 90) {
     angleMoved = 360 - angleMoved;
   }
-  Serial.print("Angle moved value is: ");
-  Serial.println(angleMoved);
+  //Serial.print("Angle moved value is: ");
+  //Serial.println(angleMoved);
   int k = 10;
   //+VE IS CW
   left_font_motor.writeMicroseconds(1500 + (speed_val + angleMoved * k));
