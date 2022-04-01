@@ -1,9 +1,33 @@
 #include <Servo.h>  //Need for Servo pulse output
+#include <SoftwareSerial.h> // Need for wireless module.
 //#define NO_READ_GYRO  //Uncomment of GYRO is not attached.
 //#define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 
-// This is a new comment!!!!
+/*
+//Wireless Setup
+#define INTERNAL_LED 13
+
+// Serial Data input pin
+#define BLUETOOTH_RX 10
+// Serial Data output pin
+#define BLUETOOTH_TX 11
+
+#define STARTUP_DELAY 10 // Seconds
+#define LOOP_DELAY 10 // miliseconds
+#define SAMPLE_DELAY 10 // miliseconds
+
+
+// USB Serial Port
+#define OUTPUTMONITOR 0
+#define OUTPUTPLOTTER 0
+
+// Bluetooth Serial Port
+#define OUTPUTBLUETOOTHMONITOR 1
+
+SoftwareSerial BluetoothSerial(BLUETOOTH_RX, BLUETOOTH_TX);
+*/
+
 //State machine states
 enum STATE {
   INITIALISING,
@@ -84,6 +108,12 @@ void setup(void)
   delay(1000);
   SerialCom->println("Setup....");
 
+  /*
+  // Wireless module setup
+  BluetoothSerial.begin(115200);
+
+  Serial.print("Ready, waiting for 1000ms");
+  */
   delay(1000); //settling time but no really needed
 }
 
