@@ -101,7 +101,7 @@ void loop(void) //main loop
       machine_state =  running();
       break;
     case STOPPED: //Stop of Lipo Battery voltage is too low, to protect Battery
-      machine_state =  stopped();
+   machine_state = stopped();
       break;
   };
 }
@@ -137,7 +137,7 @@ STATE running() {
   WallFollow();
   delay(2000);
   Serial.println("Finished the course.");
-  delay(1000);
+  delay(100000);
   //  Serial.println("Turn by angle starting...");
   //  TurnByAngle(90);
   //  Serial.println("Turn by angle finished");
@@ -296,7 +296,8 @@ void FindCorner()
   }
 }
 
-void WallFollow() {
+// What does this function do?
+void WallFollow() { 
   float IR_long_right=0;
   float IR_long_left = 0;
   float IR_short_right = 0;
@@ -403,23 +404,23 @@ void WallFollow() {
       forward(travel_angle);
       travel_angle=gyro_read();
     }
-      //Rotate ccw if speed_short and speed_long are positive based on IR
-      //was an else below:
-      //case 1 and case 4
-//     else if ((left==1 && (IR_long_left>IR_short_left))||(left==0 && (IR_long_right<IR_short_right))){
-//      left_font_motor.writeMicroseconds(base_speed - (speed_val + speed_short));
-//      left_rear_motor.writeMicroseconds(base_speed - (speed_val + speed_short));
-//      right_rear_motor.writeMicroseconds(base_speed - (speed_val + speed_long));
-//      right_font_motor.writeMicroseconds(base_speed - (speed_val + speed_long));
-//    }
-//    
-//    //Rotate cw if speed_sort and speed_long are negative based on IR
-//    else if ((left==1 && (IR_long_left<IR_short_left))||(left==0 && (IR_long_right>IR_short_right))){
-//      left_font_motor.writeMicroseconds(base_speed + (speed_val + speed_short));
-//      left_rear_motor.writeMicroseconds(base_speed + (speed_val + speed_short));
-//      right_rear_motor.writeMicroseconds(base_speed + (speed_val + speed_long));
-//      right_font_motor.writeMicroseconds(base_speed + (speed_val + speed_long));
-//    }
+    //Rotate ccw if speed_short and speed_long are positive based on IR
+    //was an else below:
+    //case 1 and case 4
+    //     else if ((left==1 && (IR_long_left>IR_short_left))||(left==0 && (IR_long_right<IR_short_right))){
+    //      left_font_motor.writeMicroseconds(base_speed - (speed_val + speed_short));
+    //      left_rear_motor.writeMicroseconds(base_speed - (speed_val + speed_short));
+    //      right_rear_motor.writeMicroseconds(base_speed - (speed_val + speed_long));
+    //      right_font_motor.writeMicroseconds(base_speed - (speed_val + speed_long));
+    //    }
+    //    
+    //    //Rotate cw if speed_sort and speed_long are negative based on IR
+    //    else if ((left==1 && (IR_long_left<IR_short_left))||(left==0 && (IR_long_right>IR_short_right))){
+    //      left_font_motor.writeMicroseconds(base_speed + (speed_val + speed_short));
+    //      left_rear_motor.writeMicroseconds(base_speed + (speed_val + speed_short));
+    //      right_rear_motor.writeMicroseconds(base_speed + (speed_val + speed_long));
+    //      right_font_motor.writeMicroseconds(base_speed + (speed_val + speed_long));
+    //}
 
     
   }
@@ -439,35 +440,7 @@ void slight_right (float speed_short, float speed_long){
     right_font_motor.writeMicroseconds(1500 + (speed_val - speed_long));
 }
 
-  if ((derivative_long == 0) && (error_long < 0.5)) {
-    timer_long -= 100;
-  }
-  else {
-    timer_long = 500;
-  }
-  if ((derivative_short == 0) && (error_short < 0.5)) {
-    timer_short -= 100;
-  }
-  else {
-    timer_short = 500;
-  }
-
-  u_long = Kp * error_long + Ki * integral_long; // Calculate the control effort to reach target distance.
-  speed_long = (int) constrain(u_long, -500, 500);
-
-  u_short = Kp * error_short + Ki * integral_short; // Calculate the control effort to reach target distance.
-  speed_short = (int) constrain(u_short, -500, 500);
-
-  Serial.println((String)" Control Actions are: " + (String)" Long IR = " + u_long + (String)" Short IR = " + u_short);
-  Serial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_long + (String)" Left Side = " + speed_short);
-
-  left_font_motor.writeMicroseconds(1500 + (speed_val - speed_short));
-  left_rear_motor.writeMicroseconds(1500 + (speed_val - speed_short));
-  right_rear_motor.writeMicroseconds(1500 - (speed_val - speed_long));
-  right_font_motor.writeMicroseconds(1500 - (speed_val - speed_long));
-}
-void cw ()
-{
+void cw(){
   left_font_motor.writeMicroseconds(1500 + speed_val);
   left_rear_motor.writeMicroseconds(1500 + speed_val);
   right_rear_motor.writeMicroseconds(1500 + speed_val);
@@ -807,24 +780,24 @@ float gyro_read()
     currentAngle -= 360;
   }
   
-//   Serial.print("previous millis is: ");
-//  Serial.println(previous_millis);
-   T=millis()-previous_millis;
-   previous_millis=millis();
-   
-//  Serial.print("Potentiometre ");
-//  Serial.println(analogRead(sensorPin));
-//  Serial.print("Angular velocity: ");
-//  Serial.println(angularVelocity);
-//  Serial.print("Time now: ");
-//  Serial.println(millis());
-//  Serial.print("Time taken for one loop is: ");
-//  Serial.println(T);
-  //Serial.print((String)"Current angle: " + currentAngle);
+  //   Serial.print("previous millis is: ");
+  //  Serial.println(previous_millis);
+    T=millis()-previous_millis;
+    previous_millis=millis();
+    
+  //  Serial.print("Potentiometre ");
+  //  Serial.println(analogRead(sensorPin));
+  //  Serial.print("Angular velocity: ");
+  //  Serial.println(angularVelocity);
+  //  Serial.print("Time now: ");
+  //  Serial.println(millis());
+  //  Serial.print("Time taken for one loop is: ");
+  //  Serial.println(T);
+    //Serial.print((String)"Current angle: " + currentAngle);
 
-  // control the time per loop
-  delay (100);
-  return currentAngle;
+    // control the time per loop
+    delay (100);
+    return currentAngle;
 }
 
 //Angular Velocity
@@ -880,7 +853,7 @@ STATE stopped() {
     SerialCom->println("STOPPED---------");
 
 
-#ifndef NO_BATTERY_V_OK
+    #ifndef NO_BATTERY_V_OK
     //500ms timed if statement to check lipo and output speed settings
     if (is_battery_voltage_OK()) {
       SerialCom->print("Lipo OK waiting of voltage Counter 10 < ");
@@ -896,7 +869,7 @@ STATE stopped() {
     {
       counter_lipo_voltage_ok = 0;
     }
-#endif
+    #endif
   }
   return STOPPED;
 }
