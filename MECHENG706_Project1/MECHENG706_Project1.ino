@@ -889,9 +889,9 @@ boolean is_battery_voltage_OK()
     return true;
   } else {
     if (Lipo_level_cal < 0)
-      SerialCom->println("Lipo is Disconnected or Power Switch is turned OFF!!!");
+      SerialCom->println("Lipo is Disconnected or Power Switch is turned OFF!!");
     else if (Lipo_level_cal > 160)
-      SerialCom->println("!Lipo is Overchanged!!!");
+      SerialCom->println("!Lipo is Overchanged!!");
     else {
       SerialCom->println("Lipo voltage too LOW, any lower and the lipo with be damaged");
       SerialCom->print("Please Re-charge Lipo:");
