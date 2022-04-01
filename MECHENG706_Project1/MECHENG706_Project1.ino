@@ -4,7 +4,7 @@
 //#define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 
-/*
+
 //Wireless Setup
 #define INTERNAL_LED 13
 
@@ -24,9 +24,10 @@
 
 // Bluetooth Serial Port
 #define OUTPUTBLUETOOTHMONITOR 1
+volatile int32_t Counter = 1;
 
 SoftwareSerial BluetoothSerial(BLUETOOTH_RX, BLUETOOTH_TX);
-*/
+
 
 //State machine states
 enum STATE {
@@ -83,10 +84,12 @@ HardwareSerial *SerialCom;
 
 void setup(void)
 {
-  turret_motor.attach(11);
+ 
+  //turret_motor.attach(11); //CONFLICT: Wireless Module!
   pinMode(LED_BUILTIN, OUTPUT);
 
   //**********Gyroscope Setup Start**********//
+  
   pinMode(sensorPin, INPUT);
   int i;
   float sum = 0;
@@ -108,12 +111,13 @@ void setup(void)
   delay(1000);
   SerialCom->println("Setup....");
 
-  /*
-  // Wireless module setup
-  BluetoothSerial.begin(115200);
+ 
+  pinMode(INTERNAL_LED, OUTPUT);
 
-  Serial.print("Ready, waiting for 1000ms");
-  */
+  Serial.begin(115200);
+
+  BluetoothSerial.begin(115200);
+ 
   delay(1000); //settling time but no really needed
 }
 
@@ -132,6 +136,7 @@ void loop(void) //main loop
       machine_state =  stopped();
       break;
   };
+  
 }
 
 STATE initialising() {
@@ -163,13 +168,23 @@ STATE running() {
     Serial.println((String)"IR1: " + IR1_distance + (String)" IR2: " + IR2_distance + " leftIR: " + leftIR_distance + " rightIR: " + rightIR_distance);
   } 
   */
- Serial.println("Started the course.");
+
+  while(1){
+    delay(LOOP_DELAY);
+
+  delay(SAMPLE_DELAY);
+
+  serialOutput(Counter, 99, 999);
+  Counter = Counter + 1;
+  }
+ //Serial.println("Started the course.");
  //FindCorner();
  //CCWstraighten();
- strafe_left();
- delay(1000);
- Serial.println("Finished the course.");
- delay(1000);
+ 
+ //strafe_left();
+ //delay(1000);
+ //Serial.println("Finished the course.");
+ //delay(1000);
   //  Serial.println("Turn by angle starting...");
   //  TurnByAngle(90);
   //  Serial.println("Turn by angle finished");
@@ -1017,4 +1032,55 @@ void TurnByAngle(int turnAngle)
   }
   stop();
   //Serial.println("Turning clockwise 90 degrees stopped");
+}
+
+// Wireless module functions
+void serialOutputMonitor(int32_t Value1, int32_t Value2, int32_t Value3)
+{
+  String Delimiter = ", ";
+  
+  Serial.print(Value1, DEC);
+  Serial.print(Delimiter);
+  Serial.print(Value2, DEC);
+  Serial.print(Delimiter);
+  Serial.println(Value3, DEC);
+}
+
+void serialOutputPlotter(int32_t Value1, int32_t Value2, int32_t Value3)
+{
+  String Delimiter = ", ";
+  
+  Serial.print(Value1, DEC);
+  Serial.print(Delimiter);
+  Serial.print(Value2, DEC);
+  Serial.print(Delimiter);
+  Serial.println(Value3, DEC);
+}
+
+void bluetoothSerialOutputMonitor(int32_t Value1, int32_t Value2, int32_t Value3)
+{
+  String Delimiter = ", ";
+  
+  BluetoothSerial.print(Value1, DEC);
+  BluetoothSerial.print(Delimiter);
+  BluetoothSerial.print(Value2, DEC);
+  BluetoothSerial.print(Delimiter);
+  BluetoothSerial.println(Value3, DEC);
+}
+void serialOutput(int32_t Value1, int32_t Value2, int32_t Value3)
+{
+  if (OUTPUTMONITOR)
+  {
+    serialOutputMonitor(Value1, Value2, Value3);
+  }
+
+  if (OUTPUTPLOTTER)
+  {
+    serialOutputPlotter(Value1, Value2, Value3);
+  }
+
+  if (OUTPUTBLUETOOTHMONITOR)
+  {
+    bluetoothSerialOutputMonitor(Value1, Value2, Value3);;
+  }
 }
