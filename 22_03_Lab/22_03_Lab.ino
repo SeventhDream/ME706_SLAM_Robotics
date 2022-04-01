@@ -401,7 +401,7 @@ void MiddleLogic(float x, float y) {
       //wall is on the right of the robot
 
       while (half_second_count < strafe_time * 2) {//need to be tuned
-        strafe_right();
+        strafe_left();
         prev_millis = millis();
         new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
         //delay(1000); //calibrate later
@@ -429,7 +429,7 @@ void MiddleLogic(float x, float y) {
       stop();
       
       while (half_second_count < strafe_time * 2) {//need to be tuned
-        strafe_right();
+        strafe_left();
         prev_millis = millis();
         new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
         //delay(1000); //calibrate later
@@ -459,7 +459,7 @@ void MiddleLogic(float x, float y) {
       stop();
       
       while (half_second_count < strafe_time * 2) {//need to be tuned
-        strafe_right();
+        strafe_left();
         prev_millis = millis();
         new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
         //delay(1000); //calibrate later
