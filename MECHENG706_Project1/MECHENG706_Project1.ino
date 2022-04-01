@@ -32,8 +32,8 @@ int rightIR = A6;
 
 //Gyroscope Setup
 float sensorPin = A8;               //define the pin that gyro is connected
-float T =100;                        // T is the time of one loop
-long previous_millis=0;             // previous time stamp to calculate T. 
+float T = 100;                       // T is the time of one loop
+long previous_millis = 0;           // previous time stamp to calculate T.
 int sensorValue = 0;                // read out value of sensor
 float gyroSupplyVoltage = 5;        // supply voltage for gyro
 float gyroZeroVoltage = 505;          // the value of voltage when gyro is zero
@@ -133,14 +133,14 @@ STATE running() {
     Serial.println((String)"IR1: " + IR1_distance + (String)" IR2: " + IR2_distance + " leftIR: " + leftIR_distance + " rightIR: " + rightIR_distance);
     }
   */
+  
   Serial.println("Started the course.");
-//  CWstraighten();
-float init = gyro_read();
-Serial.println(init);
-while (speed_val==150){
-  forward(init);
-}
-   //
+  
+  FindCorner();
+
+  //WallFollow();
+  //delay(10000);
+  //
 
   Serial.println("Finished the course.");
   //  Serial.println("Turn by angle starting...");
@@ -192,7 +192,7 @@ void FindCorner()
   float backLeft = leftIR_read();
   float backRight = rightIR_read();
   float iAngle = gyro_read();
-  Serial.print("Ultrasond reading is: ");
+  Serial.print("Initial Ultrasond reading is: ");
   Serial.print(ultraDist);
   Serial.print("  Front right IR1: ");
   Serial.print(frontRight);
@@ -210,11 +210,16 @@ void FindCorner()
     ultraDist = HC_SR04_range();
     Serial.print("Ultrasond reading is: ");
     Serial.println(ultraDist);
+    delay(50);
   }
   stop();
 
-  //Drive straight until any sensor sees a wall 15cm away
-  while ((ultraDist > 15) && (frontLeft > 15) && (backLeft > 15) && (frontRight > 15) && (backRight > 15)) {
+  Serial.println("Ultrasond reading is less than 60cm !");
+  Serial.println("Driving Straight!");
+
+  /*
+    //Drive straight until any sensor sees a wall 15cm away
+    while ((ultraDist > 15) && (frontLeft > 15) && (backLeft > 15) && (frontRight > 15) && (backRight > 15)) {
     Serial.println("Drive straight until any sensor sees a wall 15cm away");
     iAngle = gyro_read();
     forward(iAngle);
@@ -233,50 +238,64 @@ void FindCorner()
     Serial.print(backLeft);
     Serial.print("  Back right IR: ");
     Serial.println(backRight);
-  }
+    delay(50);
+    }
+  */
+  SonarDistance(15);
+
+  Serial.print("Wall Found!");
   stop();
+  delay(5000);
 
   if (frontRight < 20) {
     Serial.println("Front right near wall");
     CCWstraighten();
   } else if (frontLeft < 20) {
+    Serial.println("Front Left Near Wall");
     CWstraighten();
   } else if ((frontLeft < 200) && (frontRight < 200)) {
-    if (frontLeft > frontRight) {
-      while (frontRight > 15.2) { //calibrate later
-        strafe_right();
-        frontRight = IR1_read();
+      Serial.println("Facing diagonal corner");
+      if (frontLeft > frontRight) {
+        Serial.println("Strafing right");
+        while (frontRight > 15.2) { //calibrate later
+          strafe_right();
+          frontRight = IR1_read();
+        }
+      } else if (frontRight > frontLeft) {
+        Serial.println("strafing left");
+        while (frontLeft > 15.2) { //calibrate later
+          strafe_left();
+          frontLeft = IR2_read();
+        }
       }
-    } else if (frontRight > frontLeft) {
-      while (frontLeft > 15.2) { //calibrate later
-        strafe_left();
-        frontLeft = IR2_read();
-      }
-    }
   } else if ((frontLeft > 250) && (frontRight > 250)) {
+    Serial.println("Turning 90 degrees clockwise");
     TurnByAngle(90);
 
   } else if ((frontLeft < 250) && (frontRight > 250)) {
+    Serial.println("Strafing Left 2");
     while (frontLeft > 15.2) { //calibrate later
       strafe_left();
       frontLeft = IR2_read();
     }
   } else if ((frontRight < 250) && (frontLeft > 250)) {
+    Serial.println("Strafing right 2");
     while (frontRight > 15.2) { //calibrate later
       strafe_right();
       frontRight = IR1_read();
     }
   }
-  stop();
-  //return;
-
-  while (ultraDist > 15) {
-    iAngle = gyro_read();
-    forward(iAngle);
-    ultraDist = HC_SR04_range();
+  else {
+    Serial.println("Random 90 degree CW turn");
+    TurnByAngle(90);
   }
   stop();
-
+  Serial.println("Second Wall Found!");
+  //return;
+  Serial.println("Driving Forward");
+  SonarDistance(15);
+  stop();
+  Serial.println("We are in a CORNER!");
   //Now we are in a corner
   if (leftIR_read() < 20) {
     TurnByAngle(90);
@@ -284,6 +303,7 @@ void FindCorner()
     if (ultraDist > 130) {
       return;
     } else {
+
       TurnByAngle(90);
       return;
     }
@@ -297,41 +317,42 @@ void FindCorner()
       return;
     }
   }
+  Serial.println("Ready to START MAPPING!");
 }
 
 void WallFollow() {
-  float IR_long_right=0;
+  float IR_long_right = 0;
   float IR_long_left = 0;
   float IR_short_right = 0;
   float IR_short_left = 0;
   float ultra = HC_SR04_range();
-  float error_long, error_short, long_IR, short_IR, left, integral_long, integral_short,travel_angle =0;
-  float speed_long=0;
-  float speed_short=0;
+  float error_long, error_short, long_IR, short_IR, left, integral_long, integral_short, travel_angle = 0;
+  float speed_long = 0;
+  float speed_short = 0;
   float u_long = 0;
   float u_short = 0;
   float target = 8;
   float tolerance = 0.5;
   float integralLimit = 50;
   float Ki = 0.05;
-  float Kp = 1;                                                                                               ; 
+  float Kp = 1;                                                                                               ;
   int timer_long, timer_short = 500;
-  int base_speed=1500;
- 
+  int base_speed = 1500;
 
-  // Determining if the wall is on the left or right 
+
+  // Determining if the wall is on the left or right
   //Serial.println((String)"Initial IR distances are: " + (String)" IR Long Right = " + IR_long_right + (String)" IR Long Left = " + IR_long_left + (String)" IR Short Right = " + IR_short_right + (String) " IR Short Left = " + IR_short_left);
 
   // Closed loop controls
-  while (timer_long>0 || ultra>15) {
-    
+  while (timer_long > 0 || ultra > 15) {
+
     //Rereading sensor values
     IR_long_right = IR1_read();
     IR_long_left = IR2_read();
     IR_short_right = rightIR_read();
     IR_short_left = leftIR_read();
-    ultra = HC_SR04_range(); 
-    travel_angle=gyro_read();
+    ultra = HC_SR04_range();
+    travel_angle = gyro_read();
 
     if ((IR_long_right - target) < (IR_long_left - target)) { //indicates whether the wall is on left side or right side
       //Serial.println("Wall is on the right!");
@@ -344,17 +365,17 @@ void WallFollow() {
       left = 1;
       long_IR = IR_long_left;
       short_IR = IR_short_left;
-      }
+    }
     //Serial.println((String)"IR distances are: " + (String)" IR Long Right = " + IR_long_right + (String)" IR Long Left = " + IR_long_left + (String)" IR Short Right = " + IR_short_right + (String) " IR Short Left = " + IR_short_left);
 
     //Calculate errors
     error_long = target - long_IR;
     error_short = target - short_IR;
     //Serial.println((String)"Errors are: " + (String)" Long IR = " + error_long + (String)" Short IR = " + error_short);
-    
+
     //  Serial.println((String)"Current Long IR is: " + long_IR + (String)", Error is: " + error_long + (String));
     //  Serial.println((String)"Current Short IR is: " + short_IR + (String)", Error is: " + error_short + (String));
-  
+
     // Stop integrating if actuators are saturated.
     if (abs(error_long) < integralLimit) {
       integral_long = integral_long + error_long * Ki; // Integrate the error with respect to loop frequency (~10Hz).
@@ -362,84 +383,84 @@ void WallFollow() {
     else {
       integral_long = 0; // Disable integral
     }
-  
+
     if (abs(error_short) < integralLimit) {
       integral_short = integral_short + error_short * Ki; // Integrate the error with respect to loop frequency (~10Hz).
     }
     else {
       integral_short = 0; // Disable integral
     }
-  
+
     u_long = Kp * error_long + Ki * integral_long; // Calculate the control effort to reach target distance.
     //speed_long = constrain(u_long, -500, 500);
-    //For some reason this constrain function isn't working, but the one below is :'D 
+    //For some reason this constrain function isn't working, but the one below is :'D
 
-    if (u_long < -500){
+    if (u_long < -500) {
       speed_long = -20;
-    } else if (u_long > 500){
+    } else if (u_long > 500) {
       speed_long = 20;
     } else {
       speed_long = u_long;
     }
-  
+
     u_short = Kp * error_short + Ki * integral_short; // Calculate the control effort to reach target distance.
     speed_short = constrain(u_short, -20, 20);
-  
+
     //Serial.println((String)" Control Actions are: " + (String)" Long IR = " + u_long + (String)" Short IR = " + u_short);
     //Serial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_long + (String)" Left Side = " + speed_short);
-    
+
     //Rotate slight left or right depending on wall position and gyro reading
-    while ((360-travel_angle)>5 && (360-travel_angle)<45 ){
+    while ((360 - travel_angle) > 5 && (360 - travel_angle) < 45 ) {
       Serial.println("turning right");
-      slight_right(speed_short,speed_long);
-      travel_angle=gyro_read();
+      slight_right(speed_short, speed_long);
+      travel_angle = gyro_read();
     }
-    while(travel_angle>5 && travel_angle<45 ) {
+    while (travel_angle > 5 && travel_angle < 45 ) {
       Serial.println("turning left");
-      slight_left(speed_short,speed_long);
-      travel_angle=gyro_read();
+      slight_left(speed_short, speed_long);
+      travel_angle = gyro_read();
     }
     // if travel angle is small, keep travelling straight
-    
-    while(travel_angle<5 || (360-travel_angle)<5) {
+
+    while (travel_angle < 5 || (360 - travel_angle) < 5) {
       Serial.println("drive straight");
       forward(travel_angle);
-      travel_angle=gyro_read();
+      travel_angle = gyro_read();
     }
-      //Rotate ccw if speed_short and speed_long are positive based on IR
-      //was an else below:
-      //case 1 and case 4
-//     else if ((left==1 && (IR_long_left>IR_short_left))||(left==0 && (IR_long_right<IR_short_right))){
-//      left_font_motor.writeMicroseconds(base_speed - (speed_val + speed_short));
-//      left_rear_motor.writeMicroseconds(base_speed - (speed_val + speed_short));
-//      right_rear_motor.writeMicroseconds(base_speed - (speed_val + speed_long));
-//      right_font_motor.writeMicroseconds(base_speed - (speed_val + speed_long));
-//    }
-//    
-//    //Rotate cw if speed_sort and speed_long are negative based on IR
-//    else if ((left==1 && (IR_long_left<IR_short_left))||(left==0 && (IR_long_right>IR_short_right))){
-//      left_font_motor.writeMicroseconds(base_speed + (speed_val + speed_short));
-//      left_rear_motor.writeMicroseconds(base_speed + (speed_val + speed_short));
-//      right_rear_motor.writeMicroseconds(base_speed + (speed_val + speed_long));
-//      right_font_motor.writeMicroseconds(base_speed + (speed_val + speed_long));
-//    }
+    //Rotate ccw if speed_short and speed_long are positive based on IR
+    //was an else below:
+    //case 1 and case 4
+    //     else if ((left==1 && (IR_long_left>IR_short_left))||(left==0 && (IR_long_right<IR_short_right))){
+    //      left_font_motor.writeMicroseconds(base_speed - (speed_val + speed_short));
+    //      left_rear_motor.writeMicroseconds(base_speed - (speed_val + speed_short));
+    //      right_rear_motor.writeMicroseconds(base_speed - (speed_val + speed_long));
+    //      right_font_motor.writeMicroseconds(base_speed - (speed_val + speed_long));
+    //    }
+    //
+    //    //Rotate cw if speed_sort and speed_long are negative based on IR
+    //    else if ((left==1 && (IR_long_left<IR_short_left))||(left==0 && (IR_long_right>IR_short_right))){
+    //      left_font_motor.writeMicroseconds(base_speed + (speed_val + speed_short));
+    //      left_rear_motor.writeMicroseconds(base_speed + (speed_val + speed_short));
+    //      right_rear_motor.writeMicroseconds(base_speed + (speed_val + speed_long));
+    //      right_font_motor.writeMicroseconds(base_speed + (speed_val + speed_long));
+    //    }
 
-    
+
   }
 }
 
-void slight_left (float speed_short, float speed_long){
-    left_font_motor.writeMicroseconds(1500 - (speed_val + speed_short));
-    left_rear_motor.writeMicroseconds(1500 + (speed_val + speed_short));
-    right_rear_motor.writeMicroseconds(1500 - (speed_val - speed_long));
-    right_font_motor.writeMicroseconds(1500 - (speed_val - speed_long));
+void slight_left (float speed_short, float speed_long) {
+  left_font_motor.writeMicroseconds(1500 - (speed_val + speed_short));
+  left_rear_motor.writeMicroseconds(1500 + (speed_val + speed_short));
+  right_rear_motor.writeMicroseconds(1500 - (speed_val - speed_long));
+  right_font_motor.writeMicroseconds(1500 - (speed_val - speed_long));
 }
 
-void slight_right (float speed_short, float speed_long){
-     left_font_motor.writeMicroseconds(1500 + (speed_val + speed_short));
-    left_rear_motor.writeMicroseconds(1500 + (speed_val + speed_short));
-    right_rear_motor.writeMicroseconds(1500 - (speed_val - speed_long));
-    right_font_motor.writeMicroseconds(1500 + (speed_val - speed_long));
+void slight_right (float speed_short, float speed_long) {
+  left_font_motor.writeMicroseconds(1500 + (speed_val + speed_short));
+  left_rear_motor.writeMicroseconds(1500 + (speed_val + speed_short));
+  right_rear_motor.writeMicroseconds(1500 - (speed_val - speed_long));
+  right_font_motor.writeMicroseconds(1500 + (speed_val - speed_long));
 }
 
 void cw ()
@@ -451,22 +472,61 @@ void cw ()
 }
 
 void CWstraighten() {
-  float frontL = IR2_read();
-  float backL = leftIR_read();
-  float error = frontL - backL;
+  float error, u, lastError, integral, derivative, speed = 0;
+  float integralLimit = 10; // Set max error boundary for integral gain to be applied to control system.
+  float initialAngle = gyro_read();
 
-  while (abs(error) > 0.2) { //calibrate this later
-    cw();
-    frontL = IR2_read();
-    backL = leftIR_read();
-    error = frontL - backL;
+  float Kp = 6; // Initialise proportional gain.
+  float Ki = 0.05; // Initialise integral gain
+  int timer = 500; // Initialise tolerance timer.
+  float frontL = 0;
+  float backL = 0;
+
+  while (timer > 0) {
+
+    frontL = IR2_read(); // Front left IR sensor reading
+    backL = leftIR_read(); // Back left IR sensor reading
+    error = frontL - backL; // Error is difference between readings
+
+    // Stop integrating if actuators are saturated.
+    if (abs(error) < integralLimit) {
+      integral = integral + error * 0.1; // Integrate the error with respect to loop frequency (~10Hz).
+    }
+    else {
+      integral = 0; // Disable integral
+    }
+
+    // Calculate derivative of error.
+    derivative =  error - lastError;
+    lastError = error; // Update last error calculated.
+
+    // Loop exits if error remains in steady state for at least 500ms.
+    if ((derivative == 0) && (error < 5)) {
+      timer -= 100;
+    }
+    else {
+      timer = 500;
+    }
+
+    u = Kp * error + Ki * integral; // Calculate the control effort to reach target distance.
+    speed = (int) constrain(u, -500, 500);
+    //Note:
+    left_font_motor.writeMicroseconds(1500 + speed);
+    left_rear_motor.writeMicroseconds(1500 + speed);
+    right_rear_motor.writeMicroseconds(1500 + speed);
+    right_font_motor.writeMicroseconds(1500 + speed);
+
+    delay(100); // Loop repeats at a frequency of ~10Hz
+
+
   }
+  stop();
   //now the robot is aligned to the wall, check for 15cm distance
   while (abs(8 - frontL) > 0.2) { //calibrate this later
-    if (frontL < (8+0.2)) {
+    if (frontL < (8 + 0.2)) {
       strafe_right();
       frontL = IR2_read();
-    } else if (frontL > (8+0.2)) {
+    } else if (frontL > (8 + 0.2)) {
       strafe_left();
       frontL = IR2_read();
     }
@@ -475,9 +535,16 @@ void CWstraighten() {
 }
 
 void CCWstraighten() {
-  float frontR = IR1_read();
-  float backR = rightIR_read();
-  float error = frontR - backR;
+  float error, u, lastError, integral, derivative, speed = 0;
+  float integralLimit = 10; // Set max error boundary for integral gain to be applied to control system.
+  float initialAngle = gyro_read();
+
+  float Kp = 6; // Initialise proportional gain.
+  float Ki = 0.05; // Initialise integral gain
+  int timer = 500; // Initialise tolerance timer.
+  float frontR = 0;
+  float backR = 0;
+
   Serial.print("Front right IR1: ");
   Serial.print(frontR);
   Serial.print("  Back right IR: ");
@@ -485,14 +552,43 @@ void CCWstraighten() {
   Serial.print("  Error is: ");
   Serial.println(error);
 
-  while (abs(error) > 2) { //calibrate this later
-    left_font_motor.writeMicroseconds(1400);
-    left_rear_motor.writeMicroseconds(1400);
-    right_rear_motor.writeMicroseconds(1400);
-    right_font_motor.writeMicroseconds(1400);
-    frontR = IR1_read();
-    backR = rightIR_read();
-    error = frontR - backR;
+  while (timer > 0) {
+
+    frontR = IR1_read(); // Front left IR sensor reading
+    backR = rightIR_read(); // Back left IR sensor reading
+    error = frontR - backR; // Error is difference between readings
+
+    // Stop integrating if actuators are saturated.
+    if (abs(error) < integralLimit) {
+      integral = integral + error * 0.1; // Integrate the error with respect to loop frequency (~10Hz).
+    }
+    else {
+      integral = 0; // Disable integral
+    }
+
+    // Calculate derivative of error.
+    derivative =  error - lastError;
+    lastError = error; // Update last error calculated.
+
+    // Loop exits if error remains in steady state for at least 500ms.
+    if ((derivative == 0) && (error < 5)) {
+      timer -= 100;
+    }
+    else {
+      timer = 500;
+    }
+
+    u = Kp * error + Ki * integral; // Calculate the control effort to reach target distance.
+    speed = (int) constrain(u, -500, 500);
+    //Note:
+    left_font_motor.writeMicroseconds(1500 - speed);
+    left_rear_motor.writeMicroseconds(1500 - speed);
+    right_rear_motor.writeMicroseconds(1500 - speed);
+    right_font_motor.writeMicroseconds(1500 - speed);
+
+    delay(100); // Loop repeats at a frequency of ~10Hz
+
+
   }
 
   //now the robot is aligned to the wall, check for 15cm distance
@@ -659,7 +755,7 @@ float IR1_read()
   float distance = 9380 * pow(signalADC, -1.11);
   last_est_IR1 = est;
   est = Kalman(distance, last_est_IR1, 1);
-  distance=constrain(distance,10,80);
+  distance = constrain(distance, 10, 80);
   //  if (isnan(est)){
   //  last_est_IR1 = 0;
   //  }
@@ -723,8 +819,8 @@ float rightIR_read()
   int signalADC = analogRead(rightIR);
   //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 1788 * pow(signalADC, -0.924);
-  distance=constrain(distance,4,30);
-  
+  distance = constrain(distance, 4, 30);
+
   est = Kalman(distance, last_est_rightIR, 2); //Kalman filter
   //  if (isnan(est)){
   //  last_est_rightIR = 0;
@@ -753,7 +849,7 @@ double Kalman(double rawdata, double prev_est, double sensor_noise) {  // Kalman
 }
 
 //float MovingAvg(float rawdata, ){
-//  
+//
 //}
 /*--------------------------------READING GYRO SENSOR--------------------------------*/
 float gyro_read()
@@ -782,20 +878,20 @@ float gyro_read()
   {
     currentAngle -= 360;
   }
-  
-//   Serial.print("previous millis is: ");
-//  Serial.println(previous_millis);
-   T=millis()-previous_millis;
-   previous_millis=millis();
-   
-//  Serial.print("Potentiometre ");
-//  Serial.println(analogRead(sensorPin));
-//  Serial.print("Angular velocity: ");
-//  Serial.println(angularVelocity);
-//  Serial.print("Time now: ");
-//  Serial.println(millis());
-//  Serial.print("Time taken for one loop is: ");
-//  Serial.println(T);
+
+  //   Serial.print("previous millis is: ");
+  //  Serial.println(previous_millis);
+  T = millis() - previous_millis;
+  previous_millis = millis();
+
+  //  Serial.print("Potentiometre ");
+  //  Serial.println(analogRead(sensorPin));
+  //  Serial.print("Angular velocity: ");
+  //  Serial.println(angularVelocity);
+  //  Serial.print("Time now: ");
+  //  Serial.println(millis());
+  //  Serial.print("Time taken for one loop is: ");
+  //  Serial.println(T);
   //Serial.print((String)"Current angle: " + currentAngle);
 
   // control the time per loop
@@ -1058,42 +1154,42 @@ void stop() //Stop
 void forward(float initialAngle)
 {
   //wrap initial angle
-  if(initialAngle > 90){
+  if (initialAngle > 90) {
     initialAngle = 360 - initialAngle;
   }
-  
+
   float angleMoved =  gyro_read() - initialAngle;
-  
+
   //wrap angle moved
   if (angleMoved > 90) {
-    angleMoved = angleMoved-360;
+    angleMoved = angleMoved - 360;
   }
-  
+
   //Serial.print("Angle moved value is: ");
   //Serial.println(angleMoved);
-  
-  float adjustment=controller(angleMoved,10,0.1);
-  
+
+  float adjustment = controller(angleMoved, 10, 0.1);
+
   //+VE IS CW
   left_font_motor.writeMicroseconds(1500 + (speed_val - adjustment));
   left_rear_motor.writeMicroseconds(1500 + (speed_val - adjustment));
   right_rear_motor.writeMicroseconds(1500 - (speed_val + adjustment));
   right_font_motor.writeMicroseconds(1500 - (speed_val + adjustment));
-  Serial.println((String)("error: ")+angleMoved + (String)", Current angle: " + currentAngle);
-  
+  Serial.println((String)("error: ") + angleMoved + (String)", Current angle: " + currentAngle);
+
 }
 
-float controller(float error, float kp, float ki){
-  float integral,u =0;
+float controller(float error, float kp, float ki) {
+  float integral, u = 0;
 
-  integral=integral+error;
+  integral = integral + error*0.01;
 
   //to prevent integral windup
-  if(error>10){
-    integral=0;
+  if (error > 10) {
+    integral = 0;
   }
-  
-  u= kp*error+ki*integral;
+
+  u = kp * error + ki * integral;
   return u;
 }
 
@@ -1136,7 +1232,8 @@ void TurnByAngle(int turnAngle)
       error = (360 - abs(error)) * direction;
     }
 
-    Serial.println((String)"CurrentAng is: " + currentAng + (String)", Error is: " + error + (String)", gyro reading is: " + gyroAngle + (String)", wrap check = " + wrapCheck);
+    //Serial.println((String)"CurrentAng is: " + currentAng + (String)", Error is: " + error + (String)", gyro reading is: " + gyroAngle + (String)", wrap check = " + wrapCheck);
+
     // Stop integrating if actuators are saturated.
     if (abs(error) < integralLimit) {
       integral = integral + error * 0.1; // Integrate the error with respect to loop frequency (~10Hz).
@@ -1170,5 +1267,70 @@ void TurnByAngle(int turnAngle)
     gyroAngle = gyro_read(); // Get current angle reading from gyroscope sensor (range 0 to 359).
   }
   stop();
-  //Serial.println("Turning clockwise 90 degrees stopped");
+}
+
+// Drive straight and stop a certain distance in mm away from an object detected in front of the robot.
+void SonarDistance(float target) {
+  // Initialise variables
+  float error, u, sonar, lastError, integral, derivative, speed = 0;
+  float angleMoved = 0;
+  float integralLimit = 30; // Set max error boundary for integral gain to be applied to control system.
+  float gyroAngle = gyro_read(); // Fetch and store current angle reading before turning.
+  float initialAngle = gyro_read();
+  float Kp = 10; // Initialise proportional gain.
+  float Ki = 0.05; // Initialise integral gain
+  int timer = 500; // Initialise tolerance timer.
+  int encError, deltaU;
+  float effort = 0;
+  float correction;
+  float adjustment = 0;
+  //wrap initial angle
+    if (initialAngle > 90) {
+      initialAngle = 360 - initialAngle;
+    }
+  // PI control loop with additional straighten correction using gyro.
+  do {
+    sonar = HC_SR04_range(); // Determine distance from object using sonar sensors (in cm) and convert to mm.
+    error = sonar - target; // Update the error for distance from target distance.
+    // Stop integrating if actuators are saturated.
+    if (abs(error) < integralLimit) {
+      integral = integral + error*0.01; // Integrate the error with respect to loop frequency (~10Hz).
+    }
+    else {
+      integral = 0; // Disable integral
+    }
+
+    // Calculate derivative of error.
+    derivative =  error - lastError;
+    lastError = error; // Update last error calculated.
+
+    // Loop exits if error remains in steady state for at least 500ms.
+    if ((derivative == 0) && (error < 5)) {
+      timer -= 100;
+    }
+    else {
+      timer = 500;
+    }
+    
+    u = Kp * error + Ki * integral; // Calculate the control effort to reach target distance.
+    effort = constrain(u, -450,450);
+    angleMoved =  gyro_read() - initialAngle;
+
+    //wrap angle moved
+    if (angleMoved > 90) {
+      angleMoved = angleMoved - 360;
+    }
+    adjustment = controller(angleMoved, 10, 0.1);
+    correction = constrain(adjustment,-50,50);
+    
+    //+VE IS CW
+    left_font_motor.writeMicroseconds(1500 + (effort - correction));
+    left_rear_motor.writeMicroseconds(1500 + (effort - correction));
+    right_rear_motor.writeMicroseconds(1500 - (effort + correction));
+    right_font_motor.writeMicroseconds(1500 - (effort + correction));
+    Serial.println((String)"Error: " + error + (String)(" sonar: ") + sonar + (String)", u: " + effort);
+
+
+    delay(100); // ~10Hz
+  } while (abs(error) > 0.02 * abs(target) || sonar == -1); // Terminate once within desired tolerance.
 }
