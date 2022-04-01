@@ -303,13 +303,15 @@ void MiddleLogic(float x, float y) {
   float ultra = 0;
   unsigned long prev_millis = millis();
   float half_second_count = 0;
+  float strafe_time = 1; 
 
   if (((IR_front_right + IR_back_right) / 2) > ((IR_back_left + IR_front_left) / 2)) {
       //wall is on the left of the robot
       
-      while (half_second_count < 2) {//need to be tuned
+      while (half_second_count < strafe_time * 2) {//need to be tuned
         strafe_right();
-        new_y = (7.5 + IR1_read());
+        prev_millis = millis();
+        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
         //delay(1000); //calibrate later
         if (millis() - prev_millis > 500){
           prev_millis = millis();
@@ -319,6 +321,7 @@ void MiddleLogic(float x, float y) {
          }
         }
         half_second_count = 0;
+        old_y = new_y;
         stop();
           
       ultra = HC_SR04_range();
@@ -333,9 +336,10 @@ void MiddleLogic(float x, float y) {
          }     
       stop();
       
-      while (half_second_count < 2) {//need to be tuned
+      while (half_second_count < strafe_time * 2) {//need to be tuned
         strafe_right();
-        new_y = (7.5 + IR1_read());
+        prev_millis = millis();
+        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
         //delay(1000); //calibrate later
         if (millis() - prev_millis > 500){
           prev_millis = millis();
@@ -345,6 +349,7 @@ void MiddleLogic(float x, float y) {
          }
         }
         half_second_count = 0;
+        old_y = new_y;
         stop();
 
       
@@ -362,9 +367,10 @@ void MiddleLogic(float x, float y) {
       stop();
 
       
-      while (half_second_count < 2) {//need to be tuned
+      while (half_second_count < strafe_time * 2) {//need to be tuned
         strafe_right();
-        new_y = (120 - (IR2_read() + 7.5));
+        prev_millis = millis();
+        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
         //delay(1000); //calibrate later
         if (millis() - prev_millis > 500){
           prev_millis = millis();
@@ -374,6 +380,7 @@ void MiddleLogic(float x, float y) {
          }
         }
         half_second_count = 0;
+        old_y = new_y;
         stop();
 
       ultra = HC_SR04_range();
@@ -393,9 +400,10 @@ void MiddleLogic(float x, float y) {
   } else {
       //wall is on the right of the robot
 
-      while (half_second_count < 2) {//need to be tuned
-        strafe_left();
-        new_y = (7.5 + IR2_read());
+      while (half_second_count < strafe_time * 2) {//need to be tuned
+        strafe_right();
+        prev_millis = millis();
+        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
         //delay(1000); //calibrate later
         if (millis() - prev_millis > 500){
           prev_millis = millis();
@@ -405,6 +413,7 @@ void MiddleLogic(float x, float y) {
          }
         }
         half_second_count = 0;
+        old_y = new_y;
         stop();
 
       ultra = HC_SR04_range();
@@ -419,9 +428,10 @@ void MiddleLogic(float x, float y) {
       }
       stop();
       
-      while (half_second_count < 2) {//need to be tuned
-        strafe_left();
-        new_y = (7.5 + IR2_read());
+      while (half_second_count < strafe_time * 2) {//need to be tuned
+        strafe_right();
+        prev_millis = millis();
+        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
         //delay(1000); //calibrate later
         if (millis() - prev_millis > 500){
           prev_millis = millis();
@@ -431,6 +441,7 @@ void MiddleLogic(float x, float y) {
          }
         }
         half_second_count = 0;
+        old_y = new_y;
         stop();
 
       
@@ -447,9 +458,10 @@ void MiddleLogic(float x, float y) {
       }
       stop();
       
-      while (half_second_count < 2) {//need to be tuned
-        strafe_left();
-        new_y = (120 - (IR2_read() + 7.5));
+      while (half_second_count < strafe_time * 2) {//need to be tuned
+        strafe_right();
+        prev_millis = millis();
+        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
         //delay(1000); //calibrate later
         if (millis() - prev_millis > 500){
           prev_millis = millis();
@@ -459,6 +471,7 @@ void MiddleLogic(float x, float y) {
          }
         }
         half_second_count = 0;
+        old_y = new_y;
         stop();
       
       ultra = HC_SR04_range();
