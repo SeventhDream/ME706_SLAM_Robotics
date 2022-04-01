@@ -135,7 +135,13 @@ STATE running() {
   */
   Serial.println("Started the course.");
 //  CWstraighten();
-    WallFollow();
+float init = gyro_read();
+Serial.println(init);
+while (speed_val==150){
+  forward(init);
+}
+   //
+
   Serial.println("Finished the course.");
   //  Serial.println("Turn by angle starting...");
   //  TurnByAngle(90);
@@ -307,8 +313,8 @@ void WallFollow() {
   float target = 8;
   float tolerance = 0.5;
   float integralLimit = 50;
-  float Ki = 0.5;
-  float Kp = 2;                                                                                               ; 
+  float Ki = 0.05;
+  float Kp = 1;                                                                                               ; 
   int timer_long, timer_short = 500;
   int base_speed=1500;
  
@@ -397,7 +403,7 @@ void WallFollow() {
     
     while(travel_angle<5 || (360-travel_angle)<5) {
       Serial.println("drive straight");
-     forward(travel_angle);
+      forward(travel_angle);
       travel_angle=gyro_read();
     }
       //Rotate ccw if speed_short and speed_long are positive based on IR
@@ -790,8 +796,7 @@ float gyro_read()
 //  Serial.println(millis());
 //  Serial.print("Time taken for one loop is: ");
 //  Serial.println(T);
-  Serial.print("Current angle: ");
-  Serial.println(currentAngle);
+  //Serial.print((String)"Current angle: " + currentAngle);
 
   // control the time per loop
   delay (100);
@@ -1052,19 +1057,44 @@ void stop() //Stop
 // Continuously move platform forward.
 void forward(float initialAngle)
 {
-  float finalAngle = gyro_read();
-  float angleMoved = finalAngle - initialAngle;
-  if (angleMoved > 90) {
-    angleMoved = 360 - angleMoved;
+  //wrap initial angle
+  if(initialAngle > 90){
+    initialAngle = 360 - initialAngle;
   }
+  
+  float angleMoved =  gyro_read() - initialAngle;
+  
+  //wrap angle moved
+  if (angleMoved > 90) {
+    angleMoved = angleMoved-360;
+  }
+  
   //Serial.print("Angle moved value is: ");
   //Serial.println(angleMoved);
-  int k = 10;
+  
+  float adjustment=controller(angleMoved,10,0.1);
+  
   //+VE IS CW
-  left_font_motor.writeMicroseconds(1500 + (speed_val + angleMoved * k));
-  left_rear_motor.writeMicroseconds(1500 + (speed_val + angleMoved * k));
-  right_rear_motor.writeMicroseconds(1500 - (speed_val - angleMoved * k));
-  right_font_motor.writeMicroseconds(1500 - (speed_val - angleMoved * k));
+  left_font_motor.writeMicroseconds(1500 + (speed_val - adjustment));
+  left_rear_motor.writeMicroseconds(1500 + (speed_val - adjustment));
+  right_rear_motor.writeMicroseconds(1500 - (speed_val + adjustment));
+  right_font_motor.writeMicroseconds(1500 - (speed_val + adjustment));
+  Serial.println((String)("error: ")+angleMoved + (String)", Current angle: " + currentAngle);
+  
+}
+
+float controller(float error, float kp, float ki){
+  float integral,u =0;
+
+  integral=integral+error;
+
+  //to prevent integral windup
+  if(error>10){
+    integral=0;
+  }
+  
+  u= kp*error+ki*integral;
+  return u;
 }
 
 // Rotate platform by a specified angle in degrees using PI control (+ve input = clockwise, -ve input = counter-clockwise).
