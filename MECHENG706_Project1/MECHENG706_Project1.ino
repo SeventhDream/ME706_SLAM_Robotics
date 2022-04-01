@@ -136,7 +136,7 @@ STATE running() {
   
   Serial.println("Started the course.");
   
-  FindCorner();
+  CWstraighten();
 
   //WallFollow();
   //delay(10000);
@@ -475,19 +475,18 @@ void CWstraighten() {
   float error, u, lastError, integral, derivative, speed = 0;
   float integralLimit = 10; // Set max error boundary for integral gain to be applied to control system.
   float initialAngle = gyro_read();
-
-  float Kp = 6; // Initialise proportional gain.
+  float effort = 0;
+  float Kp = 8; // Initialise proportional gain.
   float Ki = 0.05; // Initialise integral gain
   int timer = 500; // Initialise tolerance timer.
   float frontL = 0;
   float backL = 0;
 
   while (timer > 0) {
-
+    
     frontL = IR2_read(); // Front left IR sensor reading
     backL = leftIR_read(); // Back left IR sensor reading
     error = frontL - backL; // Error is difference between readings
-
     // Stop integrating if actuators are saturated.
     if (abs(error) < integralLimit) {
       integral = integral + error * 0.1; // Integrate the error with respect to loop frequency (~10Hz).
@@ -509,18 +508,21 @@ void CWstraighten() {
     }
 
     u = Kp * error + Ki * integral; // Calculate the control effort to reach target distance.
-    speed = (int) constrain(u, -500, 500);
+    effort = (int) constrain(u, -500, 500);
+    Serial.println((String) "frontL: " + frontL + (String)"backL" + backL + (String)"u: " + speed);
     //Note:
-    left_font_motor.writeMicroseconds(1500 + speed);
-    left_rear_motor.writeMicroseconds(1500 + speed);
-    right_rear_motor.writeMicroseconds(1500 + speed);
-    right_font_motor.writeMicroseconds(1500 + speed);
+    left_font_motor.writeMicroseconds(1500 - effort);
+    left_rear_motor.writeMicroseconds(1500 - effort);
+    right_rear_motor.writeMicroseconds(1500 - effort);
+    right_font_motor.writeMicroseconds(1500 - effort);
 
     delay(100); // Loop repeats at a frequency of ~10Hz
 
 
   }
   stop();
+  
+  Serial.println("Straight!");
   //now the robot is aligned to the wall, check for 15cm distance
   while (abs(8 - frontL) > 0.2) { //calibrate this later
     if (frontL < (8 + 0.2)) {
@@ -1269,13 +1271,12 @@ void TurnByAngle(int turnAngle)
   stop();
 }
 
-// Drive straight and stop a certain distance in mm away from an object detected in front of the robot.
+// Drive straight and stop a certain distance in cm away from an object detected in front of the robot.
 void SonarDistance(float target) {
   // Initialise variables
   float error, u, sonar, lastError, integral, derivative, speed = 0;
   float angleMoved = 0;
   float integralLimit = 30; // Set max error boundary for integral gain to be applied to control system.
-  float gyroAngle = gyro_read(); // Fetch and store current angle reading before turning.
   float initialAngle = gyro_read();
   float Kp = 10; // Initialise proportional gain.
   float Ki = 0.05; // Initialise integral gain
