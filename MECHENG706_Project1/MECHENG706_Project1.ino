@@ -476,7 +476,7 @@ void CWstraighten() {
   float integralLimit = 10; // Set max error boundary for integral gain to be applied to control system.
   float initialAngle = gyro_read();
   float effort = 0;
-  float Kp = 8; // Initialise proportional gain.
+  float Kp = 20; // Initialise proportional gain.
   float Ki = 0.05; // Initialise integral gain
   int timer = 500; // Initialise tolerance timer.
   float frontL = 0;
@@ -499,8 +499,10 @@ void CWstraighten() {
     derivative =  error - lastError;
     lastError = error; // Update last error calculated.
 
+
     // Loop exits if error remains in steady state for at least 500ms.
-    if ((derivative == 0) && (error < 5)) {
+    if ((derivative < 1) && (error < 5)) {
+      
       timer -= 100;
     }
     else {
@@ -508,8 +510,8 @@ void CWstraighten() {
     }
 
     u = Kp * error + Ki * integral; // Calculate the control effort to reach target distance.
-    effort = (int) constrain(u, -500, 500);
-    Serial.println((String) "frontL: " + frontL + (String)"backL" + backL + (String)"u: " + speed);
+    effort = constrain(u, -500, 500);
+    Serial.println((String) "error: " + error + (String)" u: " + effort + (String)" d: " + derivative);
     //Note:
     left_font_motor.writeMicroseconds(1500 - effort);
     left_rear_motor.writeMicroseconds(1500 - effort);
@@ -1335,3 +1337,4 @@ void SonarDistance(float target) {
     delay(100); // ~10Hz
   } while (abs(error) > 0.02 * abs(target) || sonar == -1); // Terminate once within desired tolerance.
 }
+
