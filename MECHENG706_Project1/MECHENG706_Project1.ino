@@ -140,13 +140,7 @@ STATE running() {
   */
   
   Serial.println("Started the course.");
-  
-  while(1){
-   FR_IR(FR_IR_Dist);
-  Serial.println((String)"FL: " + frontR[0]);
-  delay(100);
-  }
-  
+ 
   StrafeDistance(15,true);
 
   //WallFollow();
@@ -203,10 +197,10 @@ void FindCorner()
   float BR_IR_Dist[]={0,999};
 
   float ultraDist = HC_SR04_range();
-  FL_IR_Dist[0] = FL_IR(FL_IR_Dist);
-  FR_IR_Dist[0] = FR_IR(FR_IR_Dist);
-  BL_IR_Dist[0] = BL_IR(BL_IR_Dist);
-  BR_IR_Dist[0] = BR_IR(BR_IR_Dist);
+  FL_IR(FL_IR_Dist);
+  FR_IR(FR_IR_Dist);
+  BL_IR(BL_IR_Dist);
+  BR_IR(BR_IR_Dist);
   float iAngle = gyro_read();
   Serial.print("Initial Ultrasond reading is: ");
   Serial.print(ultraDist);
@@ -268,20 +262,20 @@ void FindCorner()
     AlignToWall(false);
   } else if (FL_IR_Dist[0] < 20) {
     Serial.println("Front Left Near Wall");
-    AlignToWall(false)
+    AlignToWall(false);
   } else if ((FL_IR_Dist[0] < 200) && (FR_IR_Dist[0] < 200)) {
       Serial.println("Facing diagonal corner");
       if (FL_IR_Dist[0] > FR_IR_Dist[0]) {
         Serial.println("Strafing right");
         while (FR_IR_Dist[0] > 15.2) { //calibrate later
           strafe_right();
-          FR_IR_Dist[0] = FR_IR(FR_IR_Dist);
+          FR_IR(FR_IR_Dist);
         }
       } else if (FR_IR_Dist[0] > FL_IR_Dist[0]) {
         Serial.println("strafing left");
         while (FL_IR_Dist[0] > 15.2) { //calibrate later
           strafe_left();
-          FL_IR_Dist[0] = FL_IR(FL_IR_Dist);
+          FL_IR(FL_IR_Dist);
         }
       }
   } else if ((FL_IR_Dist[0] > 250) && (FR_IR_Dist[0] > 250)) {
@@ -292,13 +286,13 @@ void FindCorner()
     Serial.println("Strafing Left 2");
     while (FL_IR_Dist[0] > 15.2) { //calibrate later
       strafe_left();
-      FL_IR_Dist[0] = FL_IR(FL_IR_Dist);
+      FL_IR(FL_IR_Dist);
     }
   } else if ((FR_IR_Dist[0] < 250) && (FL_IR_Dist[0] > 250)) {
     Serial.println("Strafing right 2");
     while (FR_IR_Dist[0] > 15.2) { //calibrate later
       strafe_right();
-      FR_IR_Dist[0] = FR_IR(FR_IR_Dist);
+      FR_IR(FR_IR_Dist);
     }
   }
   else {
@@ -313,7 +307,7 @@ void FindCorner()
   stop();
   Serial.println("We are in a CORNER!");
   //Now we are in a corner
-  if (leftIR_read() < 20) {
+  if (BL_IR[0] < 20) {
     TurnByAngle(90);
     ultraDist = HC_SR04_range();
     if (ultraDist > 130) {
@@ -337,10 +331,6 @@ void FindCorner()
 }
 
 void WallFollow() {
-  float IR_long_right = 0;
-  float IR_long_left = 0;
-  float IR_short_right = 0;
-  float IR_short_left = 0;
   float ultra = HC_SR04_range();
   float error_long, error_short, long_IR, short_IR, left, integral_long, integral_short, travel_angle = 0;
   float speed_long = 0;
@@ -355,34 +345,39 @@ void WallFollow() {
   int timer_long, timer_short = 500;
   int base_speed = 1500;
 
+  float FR_IR_Dist[]={0,999};
+  float FL_IR_Dist[]={0,999};
+  float BL_IR_Dist[]={0,999};
+  float BR_IR_Dist[]={0,999};
+
 
   // Determining if the wall is on the left or right
-  //Serial.println((String)"Initial IR distances are: " + (String)" IR Long Right = " + IR_long_right + (String)" IR Long Left = " + IR_long_left + (String)" IR Short Right = " + IR_short_right + (String) " IR Short Left = " + IR_short_left);
+  //Serial.println((String)"Initial IR distances are: " + (String)" IR Long Right = " + FR_IR_Dist[0] + (String)" IR Long Left = " + FL_IR_Dist[0] + (String)" IR Short Right = " + BR_IR_Dist[0] + (String) " IR Short Left = " + );
 
   // Closed loop controls
   while (timer_long > 0 || ultra > 15) {
 
     //Rereading sensor values
-    IR_long_right = FR_IR(FR_IR_Dist);
-    IR_long_left = FL_IR(FL_IR_Dist);
-    IR_short_right = BR_IR(BR_IR_Dist);
-    IR_short_left = BL_IR(BL_IR_Dist);
+    FR_IR(FR_IR_Dist);
+    FL_IR(FL_IR_Dist);
+    BR_IR(BR_IR_Dist);
+    BL_IR(BL_IR_Dist);
     ultra = HC_SR04_range();
     travel_angle = gyro_read();
 
-    if ((IR_long_right - target) < (IR_long_left - target)) { //indicates whether the wall is on left side or right side
+    if ((FR_IR_Dist[0] - target) < (FL_IR_Dist[0] - target)) { //indicates whether the wall is on left side or right side
       //Serial.println("Wall is on the right!");
       left = 0;
-      long_IR = IR_long_right;
-      short_IR = IR_short_right;
+      long_IR = FR_IR_Dist[0];
+      short_IR = BR_IR_Dist[0];
     }
     else {
       //Serial.println("Wall is on the left!");
       left = 1;
-      long_IR = IR_long_left;
-      short_IR = IR_short_left;
+      long_IR = FL_IR_Dist[0];
+      short_IR = BL_IR_Dist[0];
     }
-    //Serial.println((String)"IR distances are: " + (String)" IR Long Right = " + IR_long_right + (String)" IR Long Left = " + IR_long_left + (String)" IR Short Right = " + IR_short_right + (String) " IR Short Left = " + IR_short_left);
+    //Serial.println((String)"IR distances are: " + (String)" IR Long Right = " + FR_IR_Dist[0] + (String)" IR Long Left = " + FL_IR_Dist[0] + (String)" IR Short Right = " + BR_IR_Dist[0] + (String) " IR Short Left = " + BL_IR_Dist[0]);
 
     //Calculate errors
     error_long = target - long_IR;
@@ -446,7 +441,7 @@ void WallFollow() {
     //Rotate ccw if speed_short and speed_long are positive based on IR
     //was an else below:
     //case 1 and case 4
-    //     else if ((left==1 && (IR_long_left>IR_short_left))||(left==0 && (IR_long_right<IR_short_right))){
+    //     else if ((left==1 && (FL_IR_Dist[0]>BL_IR_Dist[0]))||(left==0 && (FR_IR_Dist[0]<BR_IR_Dist[0]))){
     //      left_font_motor.writeMicroseconds(base_speed - (speed_val + speed_short));
     //      left_rear_motor.writeMicroseconds(base_speed - (speed_val + speed_short));
     //      right_rear_motor.writeMicroseconds(base_speed - (speed_val + speed_long));
@@ -454,13 +449,12 @@ void WallFollow() {
     //    }
     //
     //    //Rotate cw if speed_sort and speed_long are negative based on IR
-    //    else if ((left==1 && (IR_long_left<IR_short_left))||(left==0 && (IR_long_right>IR_short_right))){
+    //    else if ((left==1 && (FL_IR_Dist[0]<BL_IR_Dist[0]))||(left==0 && (FR_IR_Dist[0]>BR_IR_Dist[0]))){
     //      left_font_motor.writeMicroseconds(base_speed + (speed_val + speed_short));
     //      left_rear_motor.writeMicroseconds(base_speed + (speed_val + speed_short));
     //      right_rear_motor.writeMicroseconds(base_speed + (speed_val + speed_long));
     //      right_font_motor.writeMicroseconds(base_speed + (speed_val + speed_long));
     //    }
-
 
   }
 }
@@ -511,7 +505,7 @@ void AlignToWall(boolean isLeft) {
       BL_IR(B_IR_Data); // Back right IR sensor reading
       direction = -1;
     }
-    error = FL_IR_Data[0] - BL_IR_Data[0]; // Error is difference between readings
+    error = FL_IR[0] - BL_IR[0]; // Error is difference between readings
     // Stop integrating if actuators are saturated.
     if (abs(error) < integralLimit) {
       integral = integral + error * 0.1; // Integrate the error with respect to loop frequency (~10Hz).
@@ -609,18 +603,18 @@ void AlignToWall(boolean isLeft) {
 
 //   }
 
-  //now the robot is aligned to the wall, check for 15cm distance
-  while (abs(15 - frontR) > 0.2) { //calibrate this later
-    if (frontR < 15) {
-      strafe_left();
-      frontR = FR_IR(FR_IR_Dist);
-    } else if (frontR > 15) {
-      strafe_right();
-      frontR = FR_IR(FR_IR_Dist);
-    }
-  }
-  stop();
-}
+//  //now the robot is aligned to the wall, check for 15cm distance
+//  while (abs(15 - frontR) > 0.2) { //calibrate this later
+//    if (frontR < 15) {
+//      strafe_left();
+//      frontR = FR_IR(FR_IR_Dist);
+//    } else if (frontR > 15) {
+//      strafe_right();
+//      frontR = FR_IR(FR_IR_Dist);
+//    }
+//  }
+//  stop();
+//}
 
 void strafe_left ()
 {
@@ -650,16 +644,21 @@ void ccw ()
 //Drive straight until hitting a wall
 void driveToWall()
 {
+  float FR_IR_Dist[]={0,999};
+  float FL_IR_Dist[]={0,999};
+  float BL_IR_Dist[]={0,999};
+  float BR_IR_Dist[]={0,999};
+  
   Serial.println("Drive to Wall Started");
-  float IR1_dist = IR1_read()();
-  float IR2_dist = FL_IR(FL_IR_Dist);
+  FR_IR(FR_IR_Dist);
+  FL_IR(FL_IR_Dist);
   float initAngle = gyro_read();
 
-  while ((IR1_dist > 15) && (IR2_dist > 15)) {
+  while ((FR_IR_Dist[0]> 15) && (FL_IR_Dist[0] > 15)) {
     Serial.println("While Loop entered");
     forward(initAngle);
-    IR1_dist = FR_IR(FR_IR_Dist);
-    IR2_dist = FL_IR(FL_IR_Dist);
+    FR_IR(FR_IR_Dist);
+    FL_IR(FL_IR_Dist);
   }
   Serial.println("Distance reached");
   stop();
@@ -667,8 +666,13 @@ void driveToWall()
 
 void straighten()
 {
-  float IR1_dist = IR1_read()();//right
-  float IR2_dist = FL_IR(FL_IR_Dist);//left
+  float FR_IR_Dist[]={0,999};
+  float FL_IR_Dist[]={0,999};
+  float BL_IR_Dist[]={0,999};
+  float BR_IR_Dist[]={0,999};
+
+  FR_IR(FR_IR_Dist);//right
+  FL_IR(FL_IR_Dist);//left
   float error, u, lastError, integral, derivative, speed = 0;
   float integralLimit = 30;
   //float error = IR1_dist - IR2_dist;
@@ -678,7 +682,7 @@ void straighten()
 
   while (timer > 0) {
 
-    error = IR1_dist - IR2_dist; //right minus left
+    error = FR_IR_Dist[0] - FL_IR_Dist[0]; //right minus left
 
     if (abs(error) < integralLimit) { //check for integrator saturation
       integral = integral + error * 0.1;
@@ -700,8 +704,8 @@ void straighten()
     right_rear_motor.writeMicroseconds(1500 - speed);
     right_font_motor.writeMicroseconds(1500 - speed);
     delay(100);
-    IR1_dist = IR1_read()();
-    IR2_dist = FL_IR(FL_IR_Dist);
+    FR_IR(FR_IR_Dist);
+    FL_IR(FL_IR_Dist);
   }
   stop();
 }
@@ -783,7 +787,7 @@ void FL_IR(float output[])
    delay(100); //Delay 0.1 second
  }
 
-void BL_read(float output[])
+void BL_IR(float output[])
  {
    int signalADC = analogRead(leftIR);
    float distance = 2550 * pow(signalADC, -1.01);
@@ -792,7 +796,7 @@ void BL_read(float output[])
    delay(100); //Delay 0.1 second
  }
 
-void BR_read(float output[])
+void BR_IR(float output[])
  {
    int signalADC = analogRead(rightIR);
    float distance = 1788 * pow(signalADC, -0.924);
@@ -1326,14 +1330,14 @@ void StrafeDistance(float target, boolean isLeft) {
   // PI control loop with additional straighten correction using gyro.
   do {
     // Check which sensors to read based on input parameter.
-    if(!isLeft){
-      FR_IR(irFront); // Front left IR sensor reading
-      BR_IR(irBack); // Back left IR sensor reading
-      error = target - (irFront[0] - irBack[0])/2; // Error is average difference between IR sensors and target distance.
-    } else{
+    if(isLeft){
       FL_IR(irFront); // Front left IR sensor reading
       BL_IR(irBack); // Back left IR sensor reading
-      error = target - (irFront[0] - irBack[0])/2; // Error is average difference between IR sensors and target distance.
+      error = target - (irFront[0]); // Error is average difference between IR sensors and target distance.
+    } else{
+      FR_IR(irFront); // Front left IR sensor reading
+      BR_IR(irBack); // Back left IR sensor reading
+      error = target - (irFront[0]); // Error is average difference between IR sensors and target distance.
     }
 
     // Stop integrating if actuators are saturated.
@@ -1369,16 +1373,14 @@ void StrafeDistance(float target, boolean isLeft) {
     correction = 0;
     //+VE IS CW
     
-    Serial.println((String)"target: " + error + (String)(" measured distance: ") + (frontL + backL)/2 + (String)", u: " + effort);
+    //Serial.println((String)"target: " + error + (String)(" measured distance: ") + (frontL + backL)/2 + (String)", u: " + effort);
     // Check which sensors to read based on input parameter.
-    if(!isLeft){ 
-      // Strafe right
+    if(!isLeft){
       left_font_motor.writeMicroseconds(1500 + (effort - correction));
       left_rear_motor.writeMicroseconds(1500 - (effort - correction));
       right_rear_motor.writeMicroseconds(1500 - (effort + correction));
       right_font_motor.writeMicroseconds(1500 + (effort + correction));
-    } else{ 
-      // Strafe left
+    } else{
       left_font_motor.writeMicroseconds(1500 - (effort - correction));
       left_rear_motor.writeMicroseconds(1500 + (effort - correction));
       right_rear_motor.writeMicroseconds(1500 + (effort + correction));
