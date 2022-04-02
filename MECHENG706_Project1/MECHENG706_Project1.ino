@@ -85,7 +85,7 @@ HardwareSerial *SerialCom;
 
 void setup(void)
 {
-  turret_motor.attach(11);
+  //turret_motor.attach(11);
   pinMode(LED_BUILTIN, OUTPUT);
 
   //Gyroscope Setup Start
@@ -155,21 +155,29 @@ STATE running() {
   fast_flash_double_LED_builtin();
 
   /*--------------------------------COURSE START--------------------------------*/
-//  while (1) {
+// while (1) {
 //    FR_IR(frontR);
 //    FL_IR(frontL);
 //    BL_IR(backL);
 //    BR_IR(backR);
+////    
+////    Serial.println((String)"FrontL: " + frontL[0] + (String)" FrontR: " + frontR[0] + " BackL: " + backL[0]+ " backR: " + backR[0]);
+////    delay(100);
+//  String Delimiter = ", ";
 //    
-//    Serial.println((String)"FrontL: " + frontL[0] + (String)" FrontR: " + frontR[0] + " BackL: " + backL[0]+ " backR: " + backR[0]);
+//    BluetoothSerial.print((String)"FrontL: " + frontL[0] + " FrontR: " + frontR[0] + " BackL: " + backL[0]+ " backR: " + backR[0]);
+//    BluetoothSerial.print(Delimiter);
+//    BluetoothSerial.print("Hello World!");
+//    BluetoothSerial.print(Delimiter);
+//    BluetoothSerial.println("Hello WORLD" + 99);
 //    delay(100);
 //    }
   
   
   Serial.println("Started the course.");
- 
-  StrafeDistance(15,true);
-
+  
+  //StrafeDistance(15,true);
+  //SonarDistance(15);
   //WallFollow();
   //delay(10000);
   //
@@ -1397,7 +1405,7 @@ void StrafeDistance(float target, boolean isLeft) {
     correction = 0;
     //+VE IS CW
     
-    Serial.println((String)"target: " + error + (String)(" measured distance: ") + irFront[0]+ (String)", u: " + effort);
+    BluetoothSerial.println((String)"Error: " + error + (String)(", measured distance: ") + irFront[0]+ (String)", u: " + effort);
     // Check which sensors to read based on input parameter.
     if(!isLeft){
       left_font_motor.writeMicroseconds(1500 + (effort - correction));
