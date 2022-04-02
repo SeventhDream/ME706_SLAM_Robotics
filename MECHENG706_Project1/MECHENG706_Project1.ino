@@ -120,6 +120,11 @@ STATE running() {
   float IR2_distance;
   float leftIR_distance;
   float rightIR_distance;
+  float frontL[] = {0,999};
+  float frontR[] = {0,999};
+  float backL[] = {0,999};
+  float backR[] = {0,999};
+
   static unsigned long previous_millis;
   fast_flash_double_LED_builtin();
 
@@ -136,7 +141,13 @@ STATE running() {
   
   Serial.println("Started the course.");
   
-  CWstraighten();
+  while(1){
+   IR1_read();
+  Serial.println((String)"FL: " + frontR[0]);
+  delay(100);
+  }
+  
+  StrafeDistance(15,true);
 
   //WallFollow();
   //delay(10000);
@@ -637,7 +648,7 @@ void ccw ()
 void driveToWall()
 {
   Serial.println("Drive to Wall Started");
-  float IR1_dist = IR1_read();
+  float IR1_dist = IR1_read()();
   float IR2_dist = IR2_read();
   float initAngle = gyro_read();
 
@@ -653,7 +664,7 @@ void driveToWall()
 
 void straighten()
 {
-  float IR1_dist = IR1_read();//right
+  float IR1_dist = IR1_read()();//right
   float IR2_dist = IR2_read();//left
   float error, u, lastError, integral, derivative, speed = 0;
   float integralLimit = 30;
@@ -686,7 +697,7 @@ void straighten()
     right_rear_motor.writeMicroseconds(1500 - speed);
     right_font_motor.writeMicroseconds(1500 - speed);
     delay(100);
-    IR1_dist = IR1_read();
+    IR1_dist = IR1_read()();
     IR2_dist = IR2_read();
   }
   stop();
@@ -751,105 +762,59 @@ void CCWcorner()
 
 
 /*--------------------------------READING IR SENSORS--------------------------------*/
-float IR1_read()
+void IR1_read()(float output[])
 {
-  double est;
   int signalADC = analogRead(IR1);
-  //float distance = 17948 * pow(signalADC, -1.22);
   float distance = 9380 * pow(signalADC, -1.11);
-  last_est_IR1 = est;
-  est = Kalman(distance, last_est_IR1, 1);
   distance = constrain(distance, 10, 80);
-  //  if (isnan(est)){
-  //  last_est_IR1 = 0;
-  //  }
-  //  else {
-  //    last_est_IR1 = est;
-  //  }
-  //  Serial.print("Distance reading for front right IR1 (in cm): ");
-  //  Serial.println(est);
-  delay(100); //Delay 0.1 second
-  return est;
+  Kalman(distance, output, 10);
+  
+  delay(100); //Delay 0.1 seconds
   //return distance;
 }
 
 float IR2_read()
-{
-  double est;
-  int signalADC = analogRead(IR2);
-  //float distance = 17948 * pow(signalADC, -1.22);
-  float distance = 2551 * pow(signalADC, -0.885);
-  last_est_IR2 = est;
-  est = Kalman(distance, last_est_IR2, 1); //Kalman filter
-  //  if (isnan(est)){
-  //  last_est_IR2 = 0;
-  //  }
-  //  else {
-  //    last_est_IR2 = est;
-  //  }
-  //  Serial.print("Distance reading for front left IR2 (in cm): ");
-  //  Serial.print(est);
-  //  Serial.print(" ; "
-  delay(100); //Delay 0.1 second
-  return est;
-  //return distance;
-}
+ {
+   int signalADC = analogRead(IR2);
+   float distance = 2551 * pow(signalADC, -0.885);
+  distance = constrain(distance, 10, 80);
+  //Kalman(distance, output, 10);
+   delay(100); //Delay 0.1 second
+   return distance
+ }
 
 float leftIR_read()
-{
-  double est;
-  int signalADC = analogRead(leftIR);
-  //float distance = 17948 * pow(signalADC, -1.22);
-  float distance = 2550 * pow(signalADC, -1.01);
-  last_est_leftIR = est;
-  est = Kalman(distance, last_est_leftIR, 1); //Kalman filter
-  //  if (isnan(est)){
-  //  last_est_leftIR = 0;
-  //  }
-  //  else {
-  //    last_est_leftIR = est;
-  //  }
-  //  Serial.print("Distance reading for back left IR (in cm): ");
-  //  Serial.print(est);
-  //  Serial.print(" ; ");
-  delay(100); //Delay 0.1 second
-  //return distance;
-  return est;
-}
+ {
+   int signalADC = analogRead(leftIR);
+   float distance = 2550 * pow(signalADC, -1.01);
+   distance = constrain(distance, 4, 30);
+   //Kalman(distance, output, 10);
+   delay(100); //Delay 0.1 second
+   return distance;
+ }
 
 float rightIR_read()
-{
-  double est;
-  int signalADC = analogRead(rightIR);
-  //float distance = 17948 * pow(signalADC, -1.22);
-  float distance = 1788 * pow(signalADC, -0.924);
-  distance = constrain(distance, 4, 30);
+ {
+   int signalADC = analogRead(rightIR);
+   float distance = 1788 * pow(signalADC, -0.924);
+   distance = constrain(distance, 4, 30);
+   //Kalman(distance, output, 10);
+   delay(100); //Delay 0.1 second
+   return distance;
+ }
 
-  est = Kalman(distance, last_est_rightIR, 2); //Kalman filter
-  //  if (isnan(est)){
-  //  last_est_rightIR = 0;
-  //  }
-  //  else {
-  //    last_est_rightIR = est;
-  //  }
-  //Serial.print("Distance reading for right IR (in cm): ");
-  //Serial.println(est);
-  delay(100); //Delay 0.1 second
-  return est;
-}
-
-double Kalman(double rawdata, double prev_est, double sensor_noise) {  // Kalman Filter
+void Kalman(double rawdata, float output[], double sensor_noise) {  // Kalman Filter
   double a_priori_est, a_post_est, a_priori_var, a_post_var, kalman_gain;
-
-  a_priori_est = prev_est;
-  a_priori_var = last_var + process_noise;
+  a_priori_est = output[0];
+  a_priori_var = output[1] + process_noise;
 
   kalman_gain = a_priori_var / (a_priori_var + sensor_noise);
   a_post_est = a_priori_est + kalman_gain * (rawdata - a_priori_est);
   a_post_est = constrain(a_post_est, 0, 999); // constrain output to prevent infinite values.
   a_post_var = (1 - kalman_gain) * a_priori_var;
   last_var = a_post_var;
-  return a_post_est;
+  output[0] = a_post_est;
+  output[1] = a_post_var;
 }
 
 //float MovingAvg(float rawdata, ){
@@ -1338,3 +1303,96 @@ void SonarDistance(float target) {
   } while (abs(error) > 0.02 * abs(target) || sonar == -1); // Terminate once within desired tolerance.
 }
 
+// Strafe to a specified distance from a wall using average reading from IR sensors.
+void StrafeDistance(float target, boolean isLeft) {
+  // Initialise variables
+  float error = 0;
+  float u = 0; 
+  float sonar = 0;
+  float lastError = 0; 
+  float integral = 0; 
+  float derivative = 0; 
+  float angleMoved = 0;
+   float effort = 0;
+  float correction;
+  float adjustment = 0;
+  float irFront[] = {0,999};
+  float irBack[] = {0,999};
+  
+  float integralLimit = 30; // Set max error boundary for integral gain to be applied to control system.
+  float initialAngle = gyro_read();
+
+  float Kp = 50; // Initialise proportional gain.
+  float Ki = 0.1; // Initialise integral gain
+  int timer = 500; // Initialise tolerance timer.
+ 
+
+  //Wrap initial angle
+  if (initialAngle > 90) {
+    initialAngle = 360 - initialAngle;
+  }
+
+  // PI control loop with additional straighten correction using gyro.
+  do {
+    // Check which sensors to read based on input parameter.
+    if(isLeft){
+      frontL = IR2_read(); // Front left IR sensor reading
+      backL = leftIR_read(); // Back left IR sensor reading
+      error = target - (frontL); // Error is average difference between IR sensors and target distance.
+    } else{
+      IR1_read(irFront); // Front left IR sensor reading
+      backR = rightIR_read(); // Back left IR sensor reading
+      error = target - (irFront[0]); // Error is average difference between IR sensors and target distance.
+    }
+
+    // Stop integrating if actuators are saturated.
+    if (abs(error) < integralLimit) {
+      integral = integral + error*0.1; // Integrate the error with respect to loop frequency (~10Hz).
+    }
+    else {
+      integral = 0; // Disable integral
+    }
+
+    // Calculate derivative of error.
+    derivative =  error - lastError;
+    lastError = error; // Update last error calculated.
+
+    // Loop exits if error remains in steady state for at least 500ms.
+    if ((derivative == 0) && (error < 5)) {
+      timer -= 100;
+    }
+    else {
+      timer = 500;
+    }
+    
+    u = Kp * error + Ki * integral; // Calculate the control effort to reach target distance.
+    effort = constrain(u, -450,450);
+    angleMoved =  gyro_read() - initialAngle;
+
+    //wrap angle moved
+    if (angleMoved > 90) {
+      angleMoved = angleMoved - 360;
+    }
+    adjustment = controller(angleMoved, 10, 0.1);
+    correction = constrain(adjustment,-50,50);
+    correction = 0;
+    //+VE IS CW
+    
+    Serial.println((String)"target: " + error + (String)(" measured distance: ") + (frontL + backL)/2 + (String)", u: " + effort);
+    // Check which sensors to read based on input parameter.
+    if(!isLeft){
+      left_font_motor.writeMicroseconds(1500 + (effort - correction));
+      left_rear_motor.writeMicroseconds(1500 - (effort - correction));
+      right_rear_motor.writeMicroseconds(1500 - (effort + correction));
+      right_font_motor.writeMicroseconds(1500 + (effort + correction));
+    } else{
+      left_font_motor.writeMicroseconds(1500 - (effort - correction));
+      left_rear_motor.writeMicroseconds(1500 + (effort - correction));
+      right_rear_motor.writeMicroseconds(1500 + (effort + correction));
+      right_font_motor.writeMicroseconds(1500 - (effort + correction));
+    }
+
+    delay(100); // ~10Hz
+  } while (abs(error) > 0.02 * abs(target)); // Terminate once within desired tolerance.
+  stop();
+}
