@@ -129,15 +129,16 @@ STATE running() {
   fast_flash_double_LED_builtin();
 
   /*--------------------------------COURSE START--------------------------------*/
-  /*while (1) {
-    IR1_distance = FR_IR(FR_IR_Dist);
-    IR2_distance = FL_IR(FL_IR_Dist);
-    leftIR_distance = BL_IR(BL_IR_Dist);
-    rightIR_distance = BR_IR(BR_IR_Dist);
-
-    Serial.println((String)"IR1: " + IR1_distance + (String)" IR2: " + IR2_distance + " leftIR: " + leftIR_distance + " rightIR: " + rightIR_distance);
-    }
-  */
+//  while (1) {
+//    FR_IR(frontR);
+//    FL_IR(frontL);
+//    BL_IR(backL);
+//    BR_IR(backR);
+//    
+//    Serial.println((String)"FrontL: " + frontL[0] + (String)" FrontR: " + frontR[0] + " BackL: " + backL[0]+ " backR: " + backR[0]);
+//    delay(100);
+//    }
+  
   
   Serial.println("Started the course.");
  
@@ -774,8 +775,7 @@ void FR_IR(float output[])
   int signalADC = analogRead(IR1);
   float distance = 9380 * pow(signalADC, -1.11);
   distance = constrain(distance, 10, 80);
-  Kalman(distance, output, 10);
-  delay(100); //Delay 0.1 seconds
+  Kalman(distance, output, 5);
 }
 
 void FL_IR(float output[])
@@ -783,8 +783,7 @@ void FL_IR(float output[])
   int signalADC = analogRead(IR2);
   float distance = 2551 * pow(signalADC, -0.885);
   distance = constrain(distance, 10, 80);
-  Kalman(distance, output, 10);
-  delay(100); //Delay 0.1 second
+  Kalman(distance, output, 5);
 }
 
 void BL_IR(float output[])
@@ -792,8 +791,7 @@ void BL_IR(float output[])
    int signalADC = analogRead(leftIR);
    float distance = 2550 * pow(signalADC, -1.01);
    distance = constrain(distance, 4, 30);
-   Kalman(distance, output, 10);
-   delay(100); //Delay 0.1 second
+   Kalman(distance, output, 5);
  }
 
 void BR_IR(float output[])
@@ -801,8 +799,7 @@ void BR_IR(float output[])
    int signalADC = analogRead(rightIR);
    float distance = 1788 * pow(signalADC, -0.924);
    distance = constrain(distance, 4, 30);
-   Kalman(distance, output, 10);
-   delay(100); //Delay 0.1 second
+   Kalman(distance, output, 5);
  }
 
 void Kalman(double rawdata, float output[], double sensor_noise) {  // Kalman Filter
@@ -1374,7 +1371,7 @@ void StrafeDistance(float target, boolean isLeft) {
     correction = 0;
     //+VE IS CW
     
-    //Serial.println((String)"target: " + error + (String)(" measured distance: ") + (frontL + backL)/2 + (String)", u: " + effort);
+    Serial.println((String)"target: " + error + (String)(" measured distance: ") + irFront[0]+ (String)", u: " + effort);
     // Check which sensors to read based on input parameter.
     if(!isLeft){
       left_font_motor.writeMicroseconds(1500 + (effort - correction));
