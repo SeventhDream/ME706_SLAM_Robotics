@@ -265,10 +265,10 @@ void FindCorner()
 
   if (FR_IR_Dist[0] < 20) {
     Serial.println("Front right near wall");
-    CCWstraighten();
+    AlignToWall(false);
   } else if (FL_IR_Dist[0] < 20) {
     Serial.println("Front Left Near Wall");
-    CWstraighten();
+    AlignToWall(false)
   } else if ((FL_IR_Dist[0] < 200) && (FR_IR_Dist[0] < 200)) {
       Serial.println("Facing diagonal corner");
       if (FL_IR_Dist[0] > FR_IR_Dist[0]) {
@@ -487,7 +487,7 @@ void cw ()
   right_font_motor.writeMicroseconds(1500 + speed_val);
 }
 
-void CWstraighten() {
+void AlignToWall(boolean isLeft) {
   float error, u, lastError, integral, derivative, speed = 0;
   float integralLimit = 10; // Set max error boundary for integral gain to be applied to control system.
   float initialAngle = gyro_read();
@@ -495,14 +495,23 @@ void CWstraighten() {
   float Kp = 20; // Initialise proportional gain.
   float Ki = 0.05; // Initialise integral gain
   int timer = 500; // Initialise tolerance timer.
-  float frontL = 0;
+  float F_IR_Data[] = {0,999};
+  float B_IR_Data[] = {0,999};
   float backL = 0;
+  int direction = 0;
 
   while (timer > 0) {
-    
-    frontL = FL_IR(FL_IR_Dist); // Front left IR sensor reading
-    backL = BL_IR(BL_IR_Dist); // Back left IR sensor reading
-    error = frontL - backL; // Error is difference between readings
+    if(isLeft){
+      FL_IR(F_IR_Data); // Front left IR sensor reading
+      BL_IR(B_IR_Data); // Back left IR sensor reading
+      direction = 1;
+    }
+    else {
+      FL_IR(F_IR_Data); // Front right IR sensor reading
+      BL_IR(B_IR_Data); // Back right IR sensor reading
+      direction = -1;
+    }
+    error = FL_IR_Data[0] - BL_IR_Data[0]; // Error is difference between readings
     // Stop integrating if actuators are saturated.
     if (abs(error) < integralLimit) {
       integral = integral + error * 0.1; // Integrate the error with respect to loop frequency (~10Hz).
@@ -528,88 +537,77 @@ void CWstraighten() {
     u = Kp * error + Ki * integral; // Calculate the control effort to reach target distance.
     effort = constrain(u, -500, 500);
     Serial.println((String) "error: " + error + (String)" u: " + effort + (String)" d: " + derivative);
-    //Note:
-    left_font_motor.writeMicroseconds(1500 - effort);
-    left_rear_motor.writeMicroseconds(1500 - effort);
-    right_rear_motor.writeMicroseconds(1500 - effort);
-    right_font_motor.writeMicroseconds(1500 - effort);
+    
+    if(isLeft){
+      left_font_motor.writeMicroseconds(1500 - direction*effort);
+      left_rear_motor.writeMicroseconds(1500 - direction*effort);
+      right_rear_motor.writeMicroseconds(1500 - direction*effort);
+      right_font_motor.writeMicroseconds(1500 - direction*effort);
+    }
 
     delay(100); // Loop repeats at a frequency of ~10Hz
 
 
-  }
-  stop();
-  
-  Serial.println("Straight!");
-  //now the robot is aligned to the wall, check for 15cm distance
-  while (abs(8 - frontL) > 0.2) { //calibrate this later
-    if (frontL < (8 + 0.2)) {
-      strafe_right();
-      frontL = FL_IR(FL_IR_Dist);
-    } else if (frontL > (8 + 0.2)) {
-      strafe_left();
-      frontL = FL_IR(FL_IR_Dist);
-    }
   }
   stop();
 }
 
-void CCWstraighten() {
-  float error, u, lastError, integral, derivative, speed = 0;
-  float integralLimit = 10; // Set max error boundary for integral gain to be applied to control system.
-  float initialAngle = gyro_read();
+// void CCWstraighten() {
+//   float error, u, lastError, integral, derivative, speed = 0;
+//   float integralLimit = 10; // Set max error boundary for integral gain to be applied to control system.
+//   float initialAngle = gyro_read();
 
-  float Kp = 6; // Initialise proportional gain.
-  float Ki = 0.05; // Initialise integral gain
-  int timer = 500; // Initialise tolerance timer.
-  float frontR = 0;
-  float backR = 0;
+//   float Kp = 6; // Initialise proportional gain.
+//   float Ki = 0.05; // Initialise integral gain
+//   int timer = 500; // Initialise tolerance timer.
+//   float frontR = 0;
+//   float backR = 0;
 
-  Serial.print("Front right IR1: ");
-  Serial.print(frontR);
-  Serial.print("  Back right IR: ");
-  Serial.print(backR);
-  Serial.print("  Error is: ");
-  Serial.println(error);
+//   Serial.print("Front right IR1: ");
+//   Serial.print(frontR);
+//   Serial.print("  Back right IR: ");
+//   Serial.print(backR);
+//   Serial.print("  Error is: ");
+//   Serial.println(error);
 
-  while (timer > 0) {
+//   while (timer > 0) {
 
-    frontR = FR_IR(FR_IR_Dist); // Front left IR sensor reading
-    backR = BR_IR(BR_IR_Dist); // Back left IR sensor reading
-    error = frontR - backR; // Error is difference between readings
+//     frontR = IR1_read(); // Front left IR sensor reading
+//     backR = rightIR_read(); // Back left IR sensor reading
+//     error = frontR - backR; // Error is difference between readings
 
-    // Stop integrating if actuators are saturated.
-    if (abs(error) < integralLimit) {
-      integral = integral + error * 0.1; // Integrate the error with respect to loop frequency (~10Hz).
-    }
-    else {
-      integral = 0; // Disable integral
-    }
+//     // Stop integrating if actuators are saturated.
+//     if (abs(error) < integralLimit) {
+//       integral = integral + error * 0.1; // Integrate the error with respect to loop frequency (~10Hz).
+//     }
+//     else {
+//       integral = 0; // Disable integral
+//     }
 
-    // Calculate derivative of error.
-    derivative =  error - lastError;
-    lastError = error; // Update last error calculated.
+//     // Calculate derivative of error.
+//     derivative =  error - lastError;
+//     lastError = error; // Update last error calculated.
 
-    // Loop exits if error remains in steady state for at least 500ms.
-    if ((derivative == 0) && (error < 5)) {
-      timer -= 100;
-    }
-    else {
-      timer = 500;
-    }
+//     // Loop exits if error remains in steady state for at least 500ms.
+//     if ((derivative == 0) && (error < 5)) {
+//       timer -= 100;
+//     }
+//     else {
+//       timer = 500;
+//     }
 
-    u = Kp * error + Ki * integral; // Calculate the control effort to reach target distance.
-    speed = (int) constrain(u, -500, 500);
-    //Note:
-    left_font_motor.writeMicroseconds(1500 - speed);
-    left_rear_motor.writeMicroseconds(1500 - speed);
-    right_rear_motor.writeMicroseconds(1500 - speed);
-    right_font_motor.writeMicroseconds(1500 - speed);
+//     u = Kp * error + Ki * integral; // Calculate the control effort to reach target distance.
+//     speed = (int) constrain(u, -500, 500);
+//     //Note:
+//     left_font_motor.writeMicroseconds(1500 - speed);
+//     left_rear_motor.writeMicroseconds(1500 - speed);
+//     right_rear_motor.writeMicroseconds(1500 - speed);
+//     right_font_motor.writeMicroseconds(1500 - speed);
 
-    delay(100); // Loop repeats at a frequency of ~10Hz
+//     delay(100); // Loop repeats at a frequency of ~10Hz
 
 
-  }
+//   }
 
   //now the robot is aligned to the wall, check for 15cm distance
   while (abs(15 - frontR) > 0.2) { //calibrate this later
@@ -1140,6 +1138,7 @@ void forward(float initialAngle)
 
 }
 
+// PI controller helper function
 float controller(float error, float kp, float ki) {
   float integral, u = 0;
 
