@@ -609,18 +609,18 @@ void AlignToWall(boolean isLeft) {
 
 //   }
 
-  //now the robot is aligned to the wall, check for 15cm distance
-  while (abs(15 - frontR) > 0.2) { //calibrate this later
-    if (frontR < 15) {
-      strafe_left();
-      frontR = FR_IR(FR_IR_Dist);
-    } else if (frontR > 15) {
-      strafe_right();
-      frontR = FR_IR(FR_IR_Dist);
-    }
-  }
-  stop();
-}
+//   //now the robot is aligned to the wall, check for 15cm distance
+//   while (abs(15 - frontR) > 0.2) { //calibrate this later
+//     if (frontR < 15) {
+//       strafe_left();
+//       frontR = FR_IR(FR_IR_Dist);
+//     } else if (frontR > 15) {
+//       strafe_right();
+//       frontR = FR_IR(FR_IR_Dist);
+//     }
+//   }
+//   stop();
+// }
 
 void strafe_left ()
 {
@@ -775,31 +775,31 @@ void FR_IR(float output[])
 }
 
 void FL_IR(float output[])
- {
-   int signalADC = analogRead(IR2);
-   float distance = 2551 * pow(signalADC, -0.885);
-   distance = constrain(distance, 10, 80);
-   Kalman(distance, output, 10);
-   delay(100); //Delay 0.1 second
- }
+{
+  int signalADC = analogRead(IR2);
+  float distance = 2551 * pow(signalADC, -0.885);
+  distance = constrain(distance, 10, 80);
+  Kalman(distance, output, 10);
+  delay(100); //Delay 0.1 second
+}
 
 void BL_read(float output[])
- {
-   int signalADC = analogRead(leftIR);
-   float distance = 2550 * pow(signalADC, -1.01);
-   distance = constrain(distance, 4, 30);
-   Kalman(distance, output, 10);
-   delay(100); //Delay 0.1 second
- }
+{
+  int signalADC = analogRead(leftIR);
+  float distance = 2550 * pow(signalADC, -1.01);
+  distance = constrain(distance, 4, 30);
+  Kalman(distance, output, 10);
+  delay(100); //Delay 0.1 second
+}
 
 void BR_read(float output[])
- {
-   int signalADC = analogRead(rightIR);
-   float distance = 1788 * pow(signalADC, -0.924);
-   distance = constrain(distance, 4, 30);
-   Kalman(distance, output, 10);
-   delay(100); //Delay 0.1 second
- }
+{
+  int signalADC = analogRead(rightIR);
+  float distance = 1788 * pow(signalADC, -0.924);
+  distance = constrain(distance, 4, 30);
+  Kalman(distance, output, 10);
+  delay(100); //Delay 0.1 second
+}
 
 void Kalman(double rawdata, float output[], double sensor_noise) {  // Kalman Filter
   double a_priori_est, a_post_est, a_priori_var, a_post_var, kalman_gain;
@@ -814,6 +814,7 @@ void Kalman(double rawdata, float output[], double sensor_noise) {  // Kalman Fi
   output[0] = a_post_est;
   output[1] = a_post_var;
 }
+
 /*--------------------------------READING GYRO SENSOR--------------------------------*/
 float gyro_read()
 {
@@ -911,25 +912,25 @@ STATE stopped() {
     SerialCom->println("STOPPED---------");
 
 
-#ifndef NO_BATTERY_V_OK
-    //500ms timed if statement to check lipo and output speed settings
-    if (is_battery_voltage_OK()) {
-      SerialCom->print("Lipo OK waiting of voltage Counter 10 < ");
-      SerialCom->println(counter_lipo_voltage_ok);
-      counter_lipo_voltage_ok++;
-      if (counter_lipo_voltage_ok > 10) { //Making sure lipo voltage is stable
+  #ifndef NO_BATTERY_V_OK
+      //500ms timed if statement to check lipo and output speed settings
+      if (is_battery_voltage_OK()) {
+        SerialCom->print("Lipo OK waiting of voltage Counter 10 < ");
+        SerialCom->println(counter_lipo_voltage_ok);
+        counter_lipo_voltage_ok++;
+        if (counter_lipo_voltage_ok > 10) { //Making sure lipo voltage is stable
+          counter_lipo_voltage_ok = 0;
+          enable_motors();
+          SerialCom->println("Lipo OK returning to RUN STATE");
+          return RUNNING;
+        }
+      } else
+      {
         counter_lipo_voltage_ok = 0;
-        enable_motors();
-        SerialCom->println("Lipo OK returning to RUN STATE");
-        return RUNNING;
       }
-    } else
-    {
-      counter_lipo_voltage_ok = 0;
+  #endif
     }
-#endif
-  }
-  return STOPPED;
+    return STOPPED;
 }
 
 void fast_flash_double_LED_builtin()
