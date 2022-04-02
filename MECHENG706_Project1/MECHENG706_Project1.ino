@@ -133,9 +133,9 @@ STATE running() {
     Serial.println((String)"IR1: " + IR1_distance + (String)" IR2: " + IR2_distance + " leftIR: " + leftIR_distance + " rightIR: " + rightIR_distance);
     }
   */
-  
+
   Serial.println("Started the course.");
-  
+
   CWstraighten();
 
   //WallFollow();
@@ -217,35 +217,10 @@ void FindCorner()
   Serial.println("Ultrasond reading is less than 60cm !");
   Serial.println("Driving Straight!");
 
-  /*
-    //Drive straight until any sensor sees a wall 15cm away
-    while ((ultraDist > 15) && (frontLeft > 15) && (backLeft > 15) && (frontRight > 15) && (backRight > 15)) {
-    Serial.println("Drive straight until any sensor sees a wall 15cm away");
-    iAngle = gyro_read();
-    forward(iAngle);
-    ultraDist = HC_SR04_range();
-    frontLeft = IR2_read();
-    frontRight = IR1_read();
-    backLeft = leftIR_read();
-    backRight = rightIR_read();
-    Serial.print("Ultrasond reading is: ");
-    Serial.print(ultraDist);
-    Serial.print("  Front right IR1: ");
-    Serial.print(frontRight);
-    Serial.print("  Front left IR2: ");
-    Serial.print(frontLeft);
-    Serial.print("  Back left IR: ");
-    Serial.print(backLeft);
-    Serial.print("  Back right IR: ");
-    Serial.println(backRight);
-    delay(50);
-    }
-  */
   SonarDistance(15);
 
   Serial.print("Wall Found!");
-  stop();
-  delay(5000);
+  delay(5000); //***CHANGE THIS LATER***//
 
   if (frontRight < 20) {
     Serial.println("Front right near wall");
@@ -253,71 +228,77 @@ void FindCorner()
   } else if (frontLeft < 20) {
     Serial.println("Front Left Near Wall");
     CWstraighten();
-  } else if ((frontLeft < 200) && (frontRight < 200)) {
-      Serial.println("Facing diagonal corner");
-      if (frontLeft > frontRight) {
-        Serial.println("Strafing right");
-        while (frontRight > 15.2) { //calibrate later
-          strafe_right();
-          frontRight = IR1_read();
-        }
-      } else if (frontRight > frontLeft) {
-        Serial.println("strafing left");
-        while (frontLeft > 15.2) { //calibrate later
-          strafe_left();
-          frontLeft = IR2_read();
-        }
+  } else if ((frontLeft < 60) && (frontRight < 60)) { //CALIBRATION LATER
+    Serial.println("Facing diagonal corner");
+    if (frontLeft > frontRight) {
+      Serial.println("Strafing right");
+      while (frontRight > 15.2) { //calibrate later
+        strafe_right();
+        frontRight = IR1_read();
       }
+      stop();
+    } else {
+      Serial.println("strafing left");
+      while (frontLeft > 15.2) { //calibrate later
+        strafe_left();
+        frontLeft = IR2_read();
+      }
+      stop();
+    }
   } else if ((frontLeft > 250) && (frontRight > 250)) {
     Serial.println("Turning 90 degrees clockwise");
     TurnByAngle(90);
 
-  } else if ((frontLeft < 250) && (frontRight > 250)) {
+  } else if (frontRight > 250) {
     Serial.println("Strafing Left 2");
     while (frontLeft > 15.2) { //calibrate later
       strafe_left();
       frontLeft = IR2_read();
     }
-  } else if ((frontRight < 250) && (frontLeft > 250)) {
+  } else if (frontLeft > 250) {
     Serial.println("Strafing right 2");
     while (frontRight > 15.2) { //calibrate later
       strafe_right();
       frontRight = IR1_read();
     }
-  }
-  else {
-    Serial.println("Random 90 degree CW turn");
-    TurnByAngle(90);
-  }
-  stop();
-  Serial.println("Second Wall Found!");
-  //return;
-  Serial.println("Driving Forward");
-  SonarDistance(15);
-  stop();
-  Serial.println("We are in a CORNER!");
-  //Now we are in a corner
-  if (leftIR_read() < 20) {
-    TurnByAngle(90);
-    ultraDist = HC_SR04_range();
-    if (ultraDist > 130) {
-      return;
-    } else {
-
-      TurnByAngle(90);
-      return;
-    }
   } else {
+    Serial.println("UNCOUNTERED CONDITION FOUND");
+  }
+  stop();
+  if (frontRight < 20) {
+    Serial.println("Front right near wall");
+    CCWstraighten();
+    frontRight = IR1_read();
+  } else if (frontLeft < 20) {
+    Serial.println("Front Left Near Wall");
+    CWstraighten();
+    frontLeft = IR2_read();
+  }
+  SonarDistance(15);
+  Serial.println("We are in a CORNER!");
+
+  //now we need to set up for wall follow
+  frontLeft = IR2_read();
+  frontRight = IR1_read();
+  if (frontRight < 20) {
     TurnByAngle(-90);
     ultraDist = HC_SR04_range();
-    if (ultraDist > 130) {
-      return;
-    } else {
-      TurnByAngle(-90);
+    if (ultraDist > 180) {
       return;
     }
+    TurnByAngle(-90);
+    return;
+  } else {
+    TurnByAngle(90);
+    ultraDist = HC_SR04_range();
+    if (ultraDist > 180) {
+      return;
+    }
+    TurnByAngle(90);
+    return;
   }
-  Serial.println("Ready to START MAPPING!");
+  return;
+
 }
 
 void WallFollow() {
@@ -483,7 +464,7 @@ void CWstraighten() {
   float backL = 0;
 
   while (timer > 0) {
-    
+
     frontL = IR2_read(); // Front left IR sensor reading
     backL = leftIR_read(); // Back left IR sensor reading
     error = frontL - backL; // Error is difference between readings
@@ -502,7 +483,7 @@ void CWstraighten() {
 
     // Loop exits if error remains in steady state for at least 500ms.
     if ((derivative < 1) && (error < 5)) {
-      
+
       timer -= 100;
     }
     else {
@@ -517,13 +498,10 @@ void CWstraighten() {
     left_rear_motor.writeMicroseconds(1500 - effort);
     right_rear_motor.writeMicroseconds(1500 - effort);
     right_font_motor.writeMicroseconds(1500 - effort);
-
     delay(100); // Loop repeats at a frequency of ~10Hz
-
-
   }
   stop();
-  
+
   Serial.println("Straight!");
   //now the robot is aligned to the wall, check for 15cm distance
   while (abs(8 - frontL) > 0.2) { //calibrate this later
@@ -542,7 +520,7 @@ void CCWstraighten() {
   float error, u, lastError, integral, derivative, speed = 0;
   float integralLimit = 10; // Set max error boundary for integral gain to be applied to control system.
   float initialAngle = gyro_read();
-
+  float effort = 0;
   float Kp = 6; // Initialise proportional gain.
   float Ki = 0.05; // Initialise integral gain
   int timer = 500; // Initialise tolerance timer.
@@ -558,8 +536,8 @@ void CCWstraighten() {
 
   while (timer > 0) {
 
-    frontR = IR1_read(); // Front left IR sensor reading
-    backR = rightIR_read(); // Back left IR sensor reading
+    frontR = IR1_read(); // Front right IR sensor reading
+    backR = rightIR_read(); // Back right IR sensor reading
     error = frontR - backR; // Error is difference between readings
 
     // Stop integrating if actuators are saturated.
@@ -575,7 +553,7 @@ void CCWstraighten() {
     lastError = error; // Update last error calculated.
 
     // Loop exits if error remains in steady state for at least 500ms.
-    if ((derivative == 0) && (error < 5)) {
+    if ((derivative < 1) && (error < 5)) {
       timer -= 100;
     }
     else {
@@ -583,20 +561,20 @@ void CCWstraighten() {
     }
 
     u = Kp * error + Ki * integral; // Calculate the control effort to reach target distance.
-    speed = (int) constrain(u, -500, 500);
+    effort = constrain(u, -500, 500);
+    Serial.println((String) "error: " + error + (String)" u: " + effort + (String)" d: " + derivative);
     //Note:
-    left_font_motor.writeMicroseconds(1500 - speed);
-    left_rear_motor.writeMicroseconds(1500 - speed);
-    right_rear_motor.writeMicroseconds(1500 - speed);
-    right_font_motor.writeMicroseconds(1500 - speed);
-
+    left_font_motor.writeMicroseconds(1500 + effort);
+    left_rear_motor.writeMicroseconds(1500 + effort);
+    right_rear_motor.writeMicroseconds(1500 + effort);
+    right_font_motor.writeMicroseconds(1500 + effort);
     delay(100); // Loop repeats at a frequency of ~10Hz
-
-
   }
+  stop();
 
+  Serial.println("Straight!");
   //now the robot is aligned to the wall, check for 15cm distance
-  while (abs(15 - frontR) > 0.2) { //calibrate this later
+  while (abs(8 - frontR) > 0.2) { //calibrate this later
     if (frontR < 15) {
       strafe_left();
       frontR = IR1_read();
@@ -1186,7 +1164,7 @@ void forward(float initialAngle)
 float controller(float error, float kp, float ki) {
   float integral, u = 0;
 
-  integral = integral + error*0.01;
+  integral = integral + error * 0.01;
 
   //to prevent integral windup
   if (error > 10) {
@@ -1288,16 +1266,16 @@ void SonarDistance(float target) {
   float correction;
   float adjustment = 0;
   //wrap initial angle
-    if (initialAngle > 90) {
-      initialAngle = 360 - initialAngle;
-    }
+  if (initialAngle > 90) {
+    initialAngle = 360 - initialAngle;
+  }
   // PI control loop with additional straighten correction using gyro.
   do {
     sonar = HC_SR04_range(); // Determine distance from object using sonar sensors (in cm) and convert to mm.
     error = sonar - target; // Update the error for distance from target distance.
     // Stop integrating if actuators are saturated.
     if (abs(error) < integralLimit) {
-      integral = integral + error*0.01; // Integrate the error with respect to loop frequency (~10Hz).
+      integral = integral + error * 0.01; // Integrate the error with respect to loop frequency (~10Hz).
     }
     else {
       integral = 0; // Disable integral
@@ -1314,9 +1292,9 @@ void SonarDistance(float target) {
     else {
       timer = 500;
     }
-    
+
     u = Kp * error + Ki * integral; // Calculate the control effort to reach target distance.
-    effort = constrain(u, -450,450);
+    effort = constrain(u, -450, 450);
     angleMoved =  gyro_read() - initialAngle;
 
     //wrap angle moved
@@ -1324,8 +1302,8 @@ void SonarDistance(float target) {
       angleMoved = angleMoved - 360;
     }
     adjustment = controller(angleMoved, 10, 0.1);
-    correction = constrain(adjustment,-50,50);
-    
+    correction = constrain(adjustment, -50, 50);
+
     //+VE IS CW
     left_font_motor.writeMicroseconds(1500 + (effort - correction));
     left_rear_motor.writeMicroseconds(1500 + (effort - correction));
@@ -1336,5 +1314,5 @@ void SonarDistance(float target) {
 
     delay(100); // ~10Hz
   } while (abs(error) > 0.02 * abs(target) || sonar == -1); // Terminate once within desired tolerance.
+  stop();
 }
-
