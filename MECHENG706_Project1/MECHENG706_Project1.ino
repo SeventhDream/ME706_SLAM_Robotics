@@ -1,7 +1,31 @@
 #include <Servo.h>  //Need for Servo pulse output
+#include <SoftwareSerial.h>
 //#define NO_READ_GYRO  //Uncomment of GYRO is not attached.
 //#define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
+
+#define INTERNAL_LED 13
+
+// Serial Data input pin
+#define BLUETOOTH_RX 10
+// Serial Data output pin
+#define BLUETOOTH_TX 11
+
+#define STARTUP_DELAY 10 // Seconds
+#define LOOP_DELAY 10 // miliseconds
+#define SAMPLE_DELAY 10 // miliseconds
+
+
+// USB Serial Port
+#define OUTPUTMONITOR 0
+#define OUTPUTPLOTTER 0
+
+// Bluetooth Serial Port
+#define OUTPUTBLUETOOTHMONITOR 1
+
+volatile int32_t Counter = 1;
+
+SoftwareSerial BluetoothSerial(BLUETOOTH_RX, BLUETOOTH_TX);
 
 //State machine states
 enum STATE {
@@ -86,6 +110,8 @@ void setup(void)
   delay(1000);
   SerialCom->println("Setup....");
 
+  BluetoothSerial.begin(115200);
+  
   delay(1000); //settling time but not really needed
 }
 
@@ -1388,4 +1414,55 @@ void StrafeDistance(float target, boolean isLeft) {
     delay(100); // ~10Hz
   } while (abs(error) > 0.02 * abs(target)); // Terminate once within desired tolerance.
   stop();
+}
+
+void serialOutputMonitor(int32_t Value1, int32_t Value2, int32_t Value3)
+{
+  String Delimiter = ", ";
+  
+  Serial.print(Value1, DEC);
+  Serial.print(Delimiter);
+  Serial.print(Value2, DEC);
+  Serial.print(Delimiter);
+  Serial.println(Value3, DEC);
+}
+
+void serialOutputPlotter(int32_t Value1, int32_t Value2, int32_t Value3)
+{
+  String Delimiter = ", ";
+  
+  Serial.print(Value1, DEC);
+  Serial.print(Delimiter);
+  Serial.print(Value2, DEC);
+  Serial.print(Delimiter);
+  Serial.println(Value3, DEC);
+}
+
+void bluetoothSerialOutputMonitor(int32_t Value1, int32_t Value2, int32_t Value3)
+{
+  String Delimiter = ", ";
+  
+  BluetoothSerial.print(Value1, DEC);
+  BluetoothSerial.print(Delimiter);
+  BluetoothSerial.print(Value2, DEC);
+  BluetoothSerial.print(Delimiter);
+  BluetoothSerial.println(Value3, DEC);
+}
+
+void serialOutput(int32_t Value1, int32_t Value2, int32_t Value3)
+{
+  if (OUTPUTMONITOR)
+  {
+    serialOutputMonitor(Value1, Value2, Value3);
+  }
+
+  if (OUTPUTPLOTTER)
+  {
+    serialOutputPlotter(Value1, Value2, Value3);
+  }
+
+  if (OUTPUTBLUETOOTHMONITOR)
+  {
+    bluetoothSerialOutputMonitor(Value1, Value2, Value3);;
+  }
 }
