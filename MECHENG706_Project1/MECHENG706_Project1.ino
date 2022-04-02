@@ -1327,14 +1327,14 @@ void StrafeDistance(float target, boolean isLeft) {
   // PI control loop with additional straighten correction using gyro.
   do {
     // Check which sensors to read based on input parameter.
-    if(isLeft){
-      frontL = FL_IR(FL_IR_Dist); // Front left IR sensor reading
-      backL = BL_IR(BL_IR_Dist); // Back left IR sensor reading
-      error = target - (frontL); // Error is average difference between IR sensors and target distance.
+    if(!isLeft){
+      FR_IR(irFront); // Front left IR sensor reading
+      BR_IR(irBack); // Back left IR sensor reading
+      error = target - (irFront[0] - irBack[0])/2; // Error is average difference between IR sensors and target distance.
     } else{
-      IR1_read(irFront); // Front left IR sensor reading
-      backR = BR_IR(BR_IR_Dist); // Back left IR sensor reading
-      error = target - (irFront[0]); // Error is average difference between IR sensors and target distance.
+      FL_IR(irFront); // Front left IR sensor reading
+      BL_IR(irBack); // Back left IR sensor reading
+      error = target - (irFront[0] - irBack[0])/2; // Error is average difference between IR sensors and target distance.
     }
 
     // Stop integrating if actuators are saturated.
@@ -1372,12 +1372,14 @@ void StrafeDistance(float target, boolean isLeft) {
     
     Serial.println((String)"target: " + error + (String)(" measured distance: ") + (frontL + backL)/2 + (String)", u: " + effort);
     // Check which sensors to read based on input parameter.
-    if(!isLeft){
+    if(!isLeft){ 
+      // Strafe right
       left_font_motor.writeMicroseconds(1500 + (effort - correction));
       left_rear_motor.writeMicroseconds(1500 - (effort - correction));
       right_rear_motor.writeMicroseconds(1500 - (effort + correction));
       right_font_motor.writeMicroseconds(1500 + (effort + correction));
-    } else{
+    } else{ 
+      // Strafe left
       left_font_motor.writeMicroseconds(1500 - (effort - correction));
       left_rear_motor.writeMicroseconds(1500 + (effort - correction));
       right_rear_motor.writeMicroseconds(1500 + (effort + correction));
