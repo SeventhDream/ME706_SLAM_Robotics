@@ -230,6 +230,208 @@
 //=============================================================
 //#pragma region 3. MOTOR MOVEMENT FUNCTION
 //=============================================================
+
+  
+void MiddleLogic() {
+  //Reading sensor values
+  float IR_front_right = IR1_read();
+  float IR_front_left = IR2_read();
+  float IR_back_right = rightIR_read();
+  float IR_back_left = leftIR_read();
+  float new_x, new_y = 0; 
+  float old_x = 0;
+  float old_y = 0;
+  float ultra = 0;
+  unsigned long prev_millis = millis();
+  float half_second_count = 0;
+  float strafe_time = 1; 
+
+  if (((IR_front_right + IR_back_right) / 2) > ((IR_back_left + IR_front_left) / 2)) {
+      //wall is on the left of the robot
+      
+      while (half_second_count < strafe_time * 2) {//need to be tuned
+        strafe_right();
+        prev_millis = millis();
+        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
+        //delay(1000); //calibrate later
+        if (millis() - prev_millis > 500){
+          prev_millis = millis();
+          half_second_count++;
+          //println x = new_x;
+          //print new_y;
+         }
+        }
+        half_second_count = 0;
+        old_y = new_y;
+        stop();
+          
+      ultra = HC_SR04_range();
+      while (ultra < (200 - 15 - 13)) {
+        reverse();
+        new_x = 200 - (ultra + 12);
+        if (millis() - prev_millis > 500){
+          prev_millis = millis();
+          //println x = new_x;
+          //print new_y;
+          }
+         }     
+      stop();
+      
+      while (half_second_count < strafe_time * 2) {//need to be tuned
+        strafe_right();
+        prev_millis = millis();
+        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
+        //delay(1000); //calibrate later
+        if (millis() - prev_millis > 500){
+          prev_millis = millis();
+          half_second_count++;
+          //println x = new_x;
+          //print new_y;
+         }
+        }
+        half_second_count = 0;
+        old_y = new_y;
+        stop();
+
+      
+      ultra = HC_SR04_range();
+      while (ultra > 15) {
+        float initAngle = gyro_read();
+        forward(initAngle);
+        new_x = 200 - (ultra + 12);
+        if (millis() - prev_millis > 500){
+          prev_millis = millis();
+          //println x = new_x;
+          //print new_y;
+          }
+      }
+      stop();
+
+      
+      while (half_second_count < strafe_time * 2) {//need to be tuned
+        strafe_right();
+        prev_millis = millis();
+        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
+        //delay(1000); //calibrate later
+        if (millis() - prev_millis > 500){
+          prev_millis = millis();
+          half_second_count++;
+          //println x = new_x;
+          //print new_y;
+         }
+        }
+        half_second_count = 0;
+        old_y = new_y;
+        stop();
+
+      ultra = HC_SR04_range();
+      while (ultra < (200 - 15 - 13)) { //calibrate later
+        reverse();
+        new_x = 200 - (ultra + 12);
+        if (millis() - prev_millis > 500){
+          prev_millis = millis();
+          //println x = new_x;
+          //print new_y;
+          }
+      }
+      stop();
+
+      
+      //logic to strafe right into the right wall, then wall follow again
+  } else {
+      //wall is on the right of the robot
+
+      while (half_second_count < strafe_time * 2) {//need to be tuned
+        strafe_left();
+        prev_millis = millis();
+        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
+        //delay(1000); //calibrate later
+        if (millis() - prev_millis > 500){
+          prev_millis = millis();
+          half_second_count++;
+          //println x = new_x;
+          //print new_y;
+         }
+        }
+        half_second_count = 0;
+        old_y = new_y;
+        stop();
+
+      ultra = HC_SR04_range();
+      while (ultra < 200 - 15 - 13) { //calibrate later
+        reverse();
+        new_x = 200 - (ultra + 12);
+        if (millis() - prev_millis > 500){
+          prev_millis = millis();
+          //println x = new_x;
+          //print new_y;
+          }
+      }
+      stop();
+      
+      while (half_second_count < strafe_time * 2) {//need to be tuned
+        strafe_left();
+        prev_millis = millis();
+        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
+        //delay(1000); //calibrate later
+        if (millis() - prev_millis > 500){
+          prev_millis = millis();
+          half_second_count++;
+          //println x = new_x;
+          //print new_y;
+         }
+        }
+        half_second_count = 0;
+        old_y = new_y;
+        stop();
+
+      
+      ultra = HC_SR04_range();
+      while (ultra > 15) {
+        float initAngle = gyro_read();
+        forward(initAngle);
+        new_x = 200 + (ultra + 12);
+        if (millis() - prev_millis > 500){
+          prev_millis = millis();
+          //println x = new_x;
+          //print new_y;
+          }
+      }
+      stop();
+      
+      while (half_second_count < strafe_time * 2) {//need to be tuned
+        strafe_left();
+        prev_millis = millis();
+        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
+        //delay(1000); //calibrate later
+        if (millis() - prev_millis > 500){
+          prev_millis = millis();
+          half_second_count++;
+          //println x = new_x;
+          //print new_y;
+         }
+        }
+        half_second_count = 0;
+        old_y = new_y;
+        stop();
+      
+      ultra = HC_SR04_range();
+      while (ultra < 200 - 15 - 13) { //calibrate later
+        reverse();
+        new_x = 200 - (ultra + 12);
+        if (millis() - prev_millis > 500){
+          prev_millis = millis();
+          //println x = new_x;
+          //print new_y;
+          }
+      }
+      stop();
+      //logic to strafe left into the wall, then wall follow again
+  }
+}
+
+
+
   void FindCorner()
   {
     float FR_IR_Dist[]={0,999};
