@@ -1234,7 +1234,7 @@ void MiddleLogic() {
   void FR_IR(float output[])
   {
     int signalADC = analogRead(frontR_IR);
-    float distance = 9380 * pow(signalADC, -1.11);
+    float distance = 15832 * pow(signalADC, -1.21);
     distance = constrain(distance, 10, 80);
     Kalman(distance, output, 5);
   }
@@ -1242,7 +1242,7 @@ void MiddleLogic() {
   void FL_IR(float output[])
   {
     int signalADC = analogRead(frontL_IR);
-    float distance = 2551 * pow(signalADC, -0.885);
+    float distance = 16479 * pow(signalADC, -1.21);
     distance = constrain(distance, 10, 80);
     Kalman(distance, output, 5);
 
@@ -1251,7 +1251,7 @@ void MiddleLogic() {
   void BL_IR(float output[])
   {
     int signalADC = analogRead(backL_IR);
-    float distance = 2550 * pow(signalADC, -1.01);
+    float distance = 7279 * pow(signalADC, -1.19);
     distance = constrain(distance, 4, 30);
     Kalman(distance, output, 5);
    }
@@ -1259,7 +1259,7 @@ void MiddleLogic() {
   void BR_IR(float output[])
   {
     int signalADC = analogRead(backR_IR);
-    float distance = 1788 * pow(signalADC, -0.924);
+    float distance = 4921 * pow(signalADC, -1.13);
     distance = constrain(distance, 4, 30);
     Kalman(signalADC, output, 5);
   }
