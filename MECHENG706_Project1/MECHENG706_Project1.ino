@@ -138,10 +138,6 @@
 
   STATE running() {
     // Initialise variables
-    float IR1_distance;
-    float IR2_distance;
-    float leftIR_distance;
-    float rightIR_distance;
     float frontL[] = {0,999};
     float frontR[] = {0,999};
     float backL[] = {0,999};
@@ -151,14 +147,6 @@
     fast_flash_double_LED_builtin();
 
     /*--------------------------------COURSE START--------------------------------*/
-    // while (1) {
-    //    FR_IR(frontR);
-    //    FL_IR(frontL);
-    //    BL_IR(backL);
-    //    BR_IR(backR);
-    ////    
-    ////    Serial.println((String)"FrontL: " + frontL[0] + (String)" FrontR: " + frontR[0] + " BackL: " + backL[0]+ " backR: " + backR[0]);
-    ////    delay(100);
     //  String Delimiter = ", ";
     //    
     //    BluetoothSerial.print((String)"FrontL: " + frontL[0] + " FrontR: " + frontR[0] + " BackL: " + backL[0]+ " backR: " + backR[0]);
@@ -171,8 +159,17 @@
     
     
     Serial.println("Started the course.");
-    
-    //StrafeDistance(15,true);
+//      while (1) {
+//        
+//        FR_IR(frontR);
+//        FL_IR(frontL);
+//        BL_IR(backL);
+//        BR_IR(backR);
+//        
+//        Serial.println((String)"FrontL: " + frontL[0] + (String)" FrontR: " + frontR[0] + " BackL: " + backL[0]+ " backR: " + backR[0]);
+//        delay(100);
+//     }   
+    StrafeDistance(15,true);
     //SonarDistance(15);
     //WallFollow();
     //delay(10000);
@@ -1236,7 +1233,7 @@ void MiddleLogic() {
 //=============================================================
   void FR_IR(float output[])
   {
-    int signalADC = analogRead(frontL_IR);
+    int signalADC = analogRead(frontR_IR);
     float distance = 9380 * pow(signalADC, -1.11);
     distance = constrain(distance, 10, 80);
     Kalman(distance, output, 5);
@@ -1244,10 +1241,11 @@ void MiddleLogic() {
 
   void FL_IR(float output[])
   {
-    int signalADC = analogRead(frontR_IR);
+    int signalADC = analogRead(frontL_IR);
     float distance = 2551 * pow(signalADC, -0.885);
     distance = constrain(distance, 10, 80);
     Kalman(distance, output, 5);
+
   }
 
   void BL_IR(float output[])
@@ -1256,14 +1254,14 @@ void MiddleLogic() {
     float distance = 2550 * pow(signalADC, -1.01);
     distance = constrain(distance, 4, 30);
     Kalman(distance, output, 5);
-  }
+   }
 
   void BR_IR(float output[])
   {
     int signalADC = analogRead(backR_IR);
     float distance = 1788 * pow(signalADC, -0.924);
     distance = constrain(distance, 4, 30);
-    Kalman(distance, output, 5);
+    Kalman(signalADC, output, 5);
   }
 
   void Kalman(double rawdata, float output[], double sensor_noise) {  // Kalman Filter
