@@ -10,6 +10,7 @@
   //#define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
   //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 
+  // Coordinate Printing Interrupt Setup
   const byte interruptPin = 5;
   
   // Wireless Module Setup
@@ -85,8 +86,8 @@
   bool start_printing = 0; //set to 1 right before the first wall follow begins
 
   void setup(void)
-  {
-    //Coordinate Interrupt
+  
+    //Coordinate Interrupt Setup
     pinMode(interruptPin, OUTPUT);
     attachInterrupt(digitalPinToInterrupt(interruptPin), ISR1, CHANGE);
     
@@ -107,7 +108,7 @@
     pinMode(TRIG_PIN, OUTPUT);     //the Trigger pin will tell the sensor to range find
     digitalWrite(TRIG_PIN, LOW);
 
-  // Serial Port Setup
+    // Serial Port Setup
     SerialCom = &Serial;  // Setup the Serial port and pointer, the pointer allows switching the debug info through the USB port(Serial) or Bluetooth port(Serial1) with ease.
     SerialCom->begin(115200);
     SerialCom->println("PROTOTYPE 18/03/2022");
