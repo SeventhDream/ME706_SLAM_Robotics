@@ -316,8 +316,8 @@ void MiddleLogic(float x, float y) {
         if (millis() - prev_millis > 500){
           prev_millis = millis();
           half_second_count++;
-          //println x = new_x;
-          //print new_y;
+          //println x = new_x; //NOTE: when we print the X-coordinate, remember to ADD THE DISTANCE BETWEEN THE SONAR SENSOR AND THE MIDDLE OF THE ROBOT
+          //print new_y;  
          }
         }
         half_second_count = 0;
@@ -325,7 +325,7 @@ void MiddleLogic(float x, float y) {
         stop();
           
       ultra = HC_SR04_range();
-      while (ultra < (200 - 15 - 13)) {
+      while (ultra < (200 - 15 - (14.5 / 2))) { //TUNE THIS
         reverse();
         new_x = 200 - (ultra + 12);
         if (millis() - prev_millis > 500){
@@ -357,7 +357,7 @@ void MiddleLogic(float x, float y) {
       while (ultra > 15) {
         float initAngle = gyro_read();
         forward(initAngle);
-        new_x = 200 - (ultra + 12);
+        new_x = 200 - (ultra + (14.5 / 2));
         if (millis() - prev_millis > 500){
           prev_millis = millis();
           //println x = new_x;
@@ -384,9 +384,9 @@ void MiddleLogic(float x, float y) {
         stop();
 
       ultra = HC_SR04_range();
-      while (ultra < (200 - 15 - 13)) { //calibrate later
+      while (ultra < (200 - 15 - (14.5 / 2))) { //calibrate later
         reverse();
-        new_x = 200 - (ultra + 12);
+        new_x = 200 - (14.5 / 2);
         if (millis() - prev_millis > 500){
           prev_millis = millis();
           //println x = new_x;
@@ -417,7 +417,7 @@ void MiddleLogic(float x, float y) {
         stop();
 
       ultra = HC_SR04_range();
-      while (ultra < 200 - 15 - 13) { //calibrate later
+      while (ultra < 200 - 15 - (14.5 / 2)) { //calibrate later
         reverse();
         new_x = 200 - (ultra + 12);
         if (millis() - prev_millis > 500){
@@ -449,7 +449,7 @@ void MiddleLogic(float x, float y) {
       while (ultra > 15) {
         float initAngle = gyro_read();
         forward(initAngle);
-        new_x = 200 + (ultra + 12);
+        new_x = 200 + (ultra + (14.5 / 2));
         if (millis() - prev_millis > 500){
           prev_millis = millis();
           //println x = new_x;
@@ -475,7 +475,7 @@ void MiddleLogic(float x, float y) {
         stop();
       
       ultra = HC_SR04_range();
-      while (ultra < 200 - 15 - 13) { //calibrate later
+      while (ultra < 200 - 15 - (14.5 / 2)) { //calibrate later
         reverse();
         new_x = 200 - (ultra + 12);
         if (millis() - prev_millis > 500){
