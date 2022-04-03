@@ -10,6 +10,8 @@
   //#define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
   //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 
+  const byte interruptPin = 5;
+  
   // Wireless Module Setup
   #define BLUETOOTH_RX 10 // Serial Data input pin
   #define BLUETOOTH_TX 11 // Serial Data output pin
@@ -25,6 +27,8 @@
     RUNNING,
     STOPPED
   };
+
+  
 
   //Motor Control Setup
   const byte left_front = 46;
@@ -75,8 +79,17 @@
   //Serial Pointer
   HardwareSerial *SerialCom;
 
+  //Coordinates
+  float x = 0;
+  float y = 0;
+  bool start_printing = 0; //set to 1 right before the first wall follow begins
+
   void setup(void)
   {
+    //Coordinate Interrupt
+    pinMode(interruptPin, OUTPUT);
+    attachInterrupt(digitalPinToInterrupt(interruptPin), ISR1, CHANGE);
+    
     //turret_motor.attach(11);
     pinMode(LED_BUILTIN, OUTPUT);
 
@@ -225,209 +238,130 @@
 //#pragma endregion end
 
 //=============================================================
-//#pragma region 3. MOTOR MOVEMENT FUNCTION
+//#pragma region 3.1 COORDINATES
+//=============================================================
+
+void Coord() {
+  x = 200 - (HC_SR04_range() + (12 / 2)); // 12 / 2 is distance between sonar and middle of robot (**TUNING NEEDED**)
+  BluetoothSerial.print((String)"(x, y) = (" + x +  ", " + y + ")"); //Printing x and y
+}
+
+void ISR1() {
+  Coord();
+}
+
+//=============================================================
+//#pragma region 3.2 MOTOR MOVEMENT FUNCTION
 //=============================================================
 
   
 void MiddleLogic() {
+  
   //Reading sensor values
-  float IR_front_right = IR1_read();
-  float IR_front_left = IR2_read();
-  float IR_back_right = rightIR_read();
-  float IR_back_left = leftIR_read();
-  float new_x, new_y = 0; 
-  float old_x = 0;
-  float old_y = 0;
-  float ultra = 0;
+  float FR_IR_Data[] = {0,999};
+  FR_IR(FR_IR_Data);
+  float FL_IR_Data[] = {0,999};
+  FL_IR(FL_IR_Data);
+  float BR_IR_Data[] = {0,999};
+  BR_IR(BR_IR_Data);
+  float BL_IR_Data[] = {0,999};
+  BL_IR(BL_IR_Data);
+  
   unsigned long prev_millis = millis();
   float half_second_count = 0;
-  float strafe_time = 1; 
+  float strafe_time = 1; ///**NEED TO TUNE
+  bool forward = 0;
 
-  if (((IR_front_right + IR_back_right) / 2) > ((IR_back_left + IR_front_left) / 2)) {
+  if (((FR_IR_Data[0] + BR_IR_Data[0]) / 2) > ((FL_IR_Data[0] + BL_IR_Data[0]) / 2)) {
       //wall is on the left of the robot
+
+      MiddleStrafe();
       
+      /*
+      //OLD CODE (for reference)
       while (half_second_count < strafe_time * 2) {//need to be tuned
         strafe_right();
         prev_millis = millis();
-        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
-        //delay(1000); //calibrate later
+        y = y + (half_second_count * (22.5 / (strafe_time * 2)));
         if (millis() - prev_millis > 500){
           prev_millis = millis();
           half_second_count++;
-          //println x = new_x;
-          //print new_y;
          }
         }
         half_second_count = 0;
-        old_y = new_y;
         stop();
-          
-      ultra = HC_SR04_range();
-      while (ultra < (200 - 15 - 13)) {
-        reverse();
-        new_x = 200 - (ultra + 12);
-        if (millis() - prev_millis > 500){
-          prev_millis = millis();
-          //println x = new_x;
-          //print new_y;
-          }
-         }     
+        */
+
+      SonarDistance(200 - 15 - (12 / 2)); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
       stop();
       
-      while (half_second_count < strafe_time * 2) {//need to be tuned
-        strafe_right();
-        prev_millis = millis();
-        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
-        //delay(1000); //calibrate later
-        if (millis() - prev_millis > 500){
-          prev_millis = millis();
-          half_second_count++;
-          //println x = new_x;
-          //print new_y;
-         }
-        }
-        half_second_count = 0;
-        old_y = new_y;
-        stop();
-
-      
-      ultra = HC_SR04_range();
-      while (ultra > 15) {
-        float initAngle = gyro_read();
-        forward(initAngle);
-        new_x = 200 - (ultra + 12);
-        if (millis() - prev_millis > 500){
-          prev_millis = millis();
-          //println x = new_x;
-          //print new_y;
-          }
-      }
-      stop();
-
-      
-      while (half_second_count < strafe_time * 2) {//need to be tuned
-        strafe_right();
-        prev_millis = millis();
-        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
-        //delay(1000); //calibrate later
-        if (millis() - prev_millis > 500){
-          prev_millis = millis();
-          half_second_count++;
-          //println x = new_x;
-          //print new_y;
-         }
-        }
-        half_second_count = 0;
-        old_y = new_y;
-        stop();
-
+      /*
+      //OLD CODE (for reference)
       ultra = HC_SR04_range();
       while (ultra < (200 - 15 - 13)) { //calibrate later
-        reverse();
-        new_x = 200 - (ultra + 12);
+       if (millis() - prev_millis > 500){
+         prev_millis = millis();
+         }
+     }
+     stop();*/
+      
+      
+      MiddleStrafe();
+
+      SonarDistance(15);
+      stop();
+      /*
+      //OLD CODE (for reference)
+      ultra = HC_SR04_range();
+      while (ultra > 15) {
+        initAngle = gyro_read();
+        forward(initAngle);
         if (millis() - prev_millis > 500){
           prev_millis = millis();
-          //println x = new_x;
-          //print new_y;
           }
       }
-      stop();
+      stop();*/
 
+      MiddleStrafe();
+
+      SonarDistance(200 - 15 - (12 / 2)); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
+      stop();
       
       //logic to strafe right into the right wall, then wall follow again
   } else {
       //wall is on the right of the robot
 
-      while (half_second_count < strafe_time * 2) {//need to be tuned
-        strafe_left();
-        prev_millis = millis();
-        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
-        //delay(1000); //calibrate later
-        if (millis() - prev_millis > 500){
-          prev_millis = millis();
-          half_second_count++;
-          //println x = new_x;
-          //print new_y;
-         }
+      for (int i = 0; i < 3; i++) {
+        MiddleStrafe();
+        if (forward) {
+          SonarDistance(15);
         }
-        half_second_count = 0;
-        old_y = new_y;
-        stop();
-
-      ultra = HC_SR04_range();
-      while (ultra < 200 - 15 - 13) { //calibrate later
-        reverse();
-        new_x = 200 - (ultra + 12);
-        if (millis() - prev_millis > 500){
-          prev_millis = millis();
-          //println x = new_x;
-          //print new_y;
-          }
-      }
-      stop();
-      
-      while (half_second_count < strafe_time * 2) {//need to be tuned
-        strafe_left();
-        prev_millis = millis();
-        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
-        //delay(1000); //calibrate later
-        if (millis() - prev_millis > 500){
-          prev_millis = millis();
-          half_second_count++;
-          //println x = new_x;
-          //print new_y;
-         }
+        else {
+          SonarDistance(200 - 15 - (12 / 2)); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
         }
-        half_second_count = 0;
-        old_y = new_y;
-        stop();
-
-      
-      ultra = HC_SR04_range();
-      while (ultra > 15) {
-        float initAngle = gyro_read();
-        forward(initAngle);
-        new_x = 200 + (ultra + 12);
-        if (millis() - prev_millis > 500){
-          prev_millis = millis();
-          //println x = new_x;
-          //print new_y;
-          }
+        forward = ~forward;
       }
-      stop();
       
-      while (half_second_count < strafe_time * 2) {//need to be tuned
-        strafe_left();
-        prev_millis = millis();
-        new_y = old_y + (half_second_count * (22.5 / (strafe_time * 2)));
-        //delay(1000); //calibrate later
-        if (millis() - prev_millis > 500){
-          prev_millis = millis();
-          half_second_count++;
-          //println x = new_x;
-          //print new_y;
-         }
-        }
-        half_second_count = 0;
-        old_y = new_y;
-        stop();
-      
-      ultra = HC_SR04_range();
-      while (ultra < 200 - 15 - 13) { //calibrate later
-        reverse();
-        new_x = 200 - (ultra + 12);
-        if (millis() - prev_millis > 500){
-          prev_millis = millis();
-          //println x = new_x;
-          //print new_y;
-          }
-      }
-      stop();
       //logic to strafe left into the wall, then wall follow again
   }
 }
 
-
+  void MiddleStrafe() {
+    int half_second_count = 0;
+    float prev_millis = millis();
+    int strafe_time = 1; //[seconds]
+    
+    while (half_second_count < strafe_time * 2) { //need to be tuned
+        strafe_right();
+        prev_millis = millis();
+        y = y + (half_second_count * (22.5 / (strafe_time * 2)));
+        if (millis() - prev_millis > 500) {
+          prev_millis = millis();
+          half_second_count++;
+         }
+        }
+        stop();
+  }
 
   void FindCorner()
   {
@@ -558,7 +492,7 @@ void MiddleLogic() {
     float tolerance = 0.5;
     float integralLimit = 50;
     float Ki = 0.05;
-    float Kp = 1;                                                                                               ;
+    float Kp = 1;
     int timer_long, timer_short = 500;
     int base_speed = 1500;
 
@@ -579,6 +513,13 @@ void MiddleLogic() {
       FL_IR(FL_IR_Dist);
       BR_IR(BR_IR_Dist);
       BL_IR(BL_IR_Dist);
+
+      //Setting up interupt to start printing coordinates every 0.5sec
+      if (start_printing = 0) {
+        start_printing = 1;
+        x = 0;
+        y = 0;
+      }
 
       ultra = HC_SR04_range();
       travel_angle = gyro_read();
