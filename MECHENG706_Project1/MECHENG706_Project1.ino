@@ -10,7 +10,6 @@
   //#define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
   //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
 
-  // Coordinate Printing Interrupt Setup
   const byte interruptPin = 5;
   
   // Wireless Module Setup
@@ -86,8 +85,8 @@
   bool start_printing = 0; //set to 1 right before the first wall follow begins
 
   void setup(void)
-  
-    //Coordinate Interrupt Setup
+  {
+    //Coordinate Interrupt
     pinMode(interruptPin, OUTPUT);
     attachInterrupt(digitalPinToInterrupt(interruptPin), ISR1, CHANGE);
     
@@ -108,7 +107,7 @@
     pinMode(TRIG_PIN, OUTPUT);     //the Trigger pin will tell the sensor to range find
     digitalWrite(TRIG_PIN, LOW);
 
-    // Serial Port Setup
+  // Serial Port Setup
     SerialCom = &Serial;  // Setup the Serial port and pointer, the pointer allows switching the debug info through the USB port(Serial) or Bluetooth port(Serial1) with ease.
     SerialCom->begin(115200);
     SerialCom->println("PROTOTYPE 18/03/2022");
@@ -183,7 +182,7 @@
 //        Serial.println((String)"FrontL: " + frontL[0] + (String)" FrontR: " + frontR[0] + " BackL: " + backL[0]+ " backR: " + backR[0]);
 //        delay(100);
 //     }   
-    StrafeDistance(15,true);
+    SonarDistance(15);
     //SonarDistance(15);
     //WallFollow();
     //delay(10000);
@@ -1017,8 +1016,8 @@ void MiddleLogic() {
     float angleMoved = 0;
     float integralLimit = 30; // Set max error boundary for integral gain to be applied to control system.
     float initialAngle = gyro_read();
-    float Kp = 10; // Initialise proportional gain.
-    float Ki = 0.05; // Initialise integral gain
+    float Kp = 12; // Initialise proportional gain.
+    float Ki = 1; // Initialise integral gain
     int timer = 500; // Initialise tolerance timer.
     int encError, deltaU;
     float effort = 0;
@@ -1045,7 +1044,7 @@ void MiddleLogic() {
       lastError = error; // Update last error calculated.
 
       // Loop exits if error remains in steady state for at least 500ms.
-      if ((derivative == 0) && (error < 5)) {
+      if ((abs(derivative) < 0.5) && abs(error) < 0.05 * abs(target)) {
         timer -= 100;
       }
       else {
@@ -1072,7 +1071,7 @@ void MiddleLogic() {
 
 
       delay(100); // ~10Hz
-    } while (abs(error) > 0.02 * abs(target) || sonar == -1); // Terminate once within desired tolerance.
+    } while (timer > 0 || sonar == -1); // Terminate once within desired tolerance.
   }
 
   // Strafe to a specified distance from a wall using average reading from IR sensors.
@@ -1091,11 +1090,11 @@ void MiddleLogic() {
     float irFront[] = {0,999};
     float irBack[] = {0,999};
     
-    float integralLimit = 30; // Set max error boundary for integral gain to be applied to control system.
+    float integralLimit = 20; // Set max error boundary for integral gain to be applied to control system.
     float initialAngle = gyro_read();
 
-    float Kp = 50; // Initialise proportional gain.
-    float Ki = 0.1; // Initialise integral gain
+    float Kp = 12; // Initialise proportional gain.
+    float Ki = 1; // Initialise integral gain
     int timer = 500; // Initialise tolerance timer.
   
 
@@ -1103,18 +1102,20 @@ void MiddleLogic() {
     if (initialAngle > 90) {
       initialAngle = 360 - initialAngle;
     }
-
+    FL_IR(irFront);
+    
+  float initialIR = irFront[0];
     // PI control loop with additional straighten correction using gyro.
     do {
       // Check which sensors to read based on input parameter.
       if(isLeft){
         FL_IR(irFront); // Front left IR sensor reading
         BL_IR(irBack); // Back left IR sensor reading
-        error = target - (irFront[0]); // Error is average difference between IR sensors and target distance.
+        error = (irBack[0] + irFront[0])/2 - (target -7); // Error is average difference between IR sensors and target distance.
       } else{
-        FR_IR(irFront); // Front left IR sensor reading
-        BR_IR(irBack); // Back left IR sensor reading
-        error = target - (irFront[0]); // Error is average difference between IR sensors and target distance.
+        FR_IR(irFront); // Front right IR sensor reading
+        BR_IR(irBack); // Back right IR sensor reading
+        error = (irBack[0] + irFront[0])/2 - (target-7); // Error is average difference between IR sensors and target distance.
       }
 
       // Stop integrating if actuators are saturated.
@@ -1130,7 +1131,7 @@ void MiddleLogic() {
       lastError = error; // Update last error calculated.
 
       // Loop exits if error remains in steady state for at least 500ms.
-      if ((derivative == 0) && (error < 5)) {
+      if ((abs(derivative) < 0.5) && abs(error) < 0.05 * abs(target - 7)) {
         timer -= 100;
       }
       else {
@@ -1149,8 +1150,14 @@ void MiddleLogic() {
       correction = constrain(adjustment,-50,50);
       correction = 0;
       //+VE IS CW
-      
-      BluetoothSerial.println((String)"Error: " + error + (String)(", measured distance: ") + irFront[0]+ (String)", u: " + effort);
+      float test = (irBack[0] + irFront[0])/2;
+      float plote = initialIR - error;
+      Serial.println((String)"Error: " + error + (String)(", measured distance: ") + test + (String)", u: " + effort);
+//      Serial.print("Error:");
+//      Serial.print(target - 7 - error);
+//      Serial.print(",");
+//      Serial.print("reference:");
+//      Serial.println(target - 7);
       // Check which sensors to read based on input parameter.
       if(!isLeft){
         left_font_motor.writeMicroseconds(1500 + (effort - correction));
@@ -1165,7 +1172,7 @@ void MiddleLogic() {
       }
 
       delay(100); // ~10Hz
-    } while (abs(error) > 0.02 * abs(target)); // Terminate once within desired tolerance.
+    } while (timer >= 0); // Terminate once within desired tolerance.
     stop();
   }
 //#pragma endregion end
@@ -1177,16 +1184,16 @@ void MiddleLogic() {
   {
     int signalADC = analogRead(frontR_IR);
     float distance = 15832 * pow(signalADC, -1.21);
-    distance = constrain(distance, 10, 80);
-    Kalman(distance, output, 5);
+    distance = constrain(distance, 1, 80);
+    Kalman(distance, output, 1);
   }
 
   void FL_IR(float output[])
   {
     int signalADC = analogRead(frontL_IR);
     float distance = 16479 * pow(signalADC, -1.21);
-    distance = constrain(distance, 10, 80);
-    Kalman(distance, output, 5);
+    distance = constrain(distance, 1, 80);
+    Kalman(distance, output, 1);
 
   }
 
@@ -1194,16 +1201,16 @@ void MiddleLogic() {
   {
     int signalADC = analogRead(backL_IR);
     float distance = 7279 * pow(signalADC, -1.19);
-    distance = constrain(distance, 4, 30);
-    Kalman(distance, output, 5);
+    distance = constrain(distance, 1, 30);
+    Kalman(distance, output, 1);
    }
 
   void BR_IR(float output[])
   {
     int signalADC = analogRead(backR_IR);
     float distance = 4921 * pow(signalADC, -1.13);
-    distance = constrain(distance, 4, 30);
-    Kalman(signalADC, output, 5);
+    distance = constrain(distance, 1, 30);
+    Kalman(distance, output, 1);
   }
 
   void Kalman(double rawdata, float output[], double sensor_noise) {  // Kalman Filter
@@ -1295,7 +1302,7 @@ void MiddleLogic() {
       currentAngle -= 360;
     }
 
-    Serial.print("Potentiometre ");
+    Serial.print("Potentiometer ");
     Serial.println(analogRead(sensorPin));
     Serial.print("Angular velocity: ");
     Serial.println(angularVelocity);
