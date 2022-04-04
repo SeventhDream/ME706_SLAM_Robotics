@@ -834,7 +834,13 @@
     error[0] = error[1]; // Update last error calculated.
 
     *u = gains[0] * error[1] + gains[1] * *integral + gains[2] * *derivative; // Calculate the control effort to reach target distance.
-    u = constrain(u, effortLimit[0],effortLimit[1]);
+    
+    if (*u < effortLimit[0]){
+      *u = effortLimit[0];
+    }
+    else if (*u > effortLimit[1]){
+      *u = effortLimit[1];
+    }
   }
 
 
@@ -894,7 +900,7 @@
     SonarDistance(15);
 
     stop();
-
+  
     BluetoothSerial.println("OMFG WE ARE IN A CORNER!!!!");
   }
 
@@ -913,7 +919,7 @@
     float gyroAngle = initialAngle;
     float integralLimit = 5; // Set max error boundary for integral gain to be applied to control system
     int timer = 500; // Initialise tolerance timer.
-
+    float targetAngle = constrain(turnAngle, -180, 180); // Limit maximum turn angle to +ve or -ve 180 degrees.
     int direction = turnAngle / abs(turnAngle);
     int wrapCheck = 0;
     
@@ -942,7 +948,7 @@
       PID_Control(gyroError, gyroGains, &gyroDerivative, &gyroIntegral, &integralLimit, &angleEffort, angleEffortLimit); // Calculate control effort for angle correction using PID control.
 
       // Loop exits if error remains in steady state for at least 500ms.
-      if ((derivative < 0.5) && (error < 1)) {
+      if ((gyroDerivative < 0.5) && (gyroError[1] < 1)) {
         timer -= 100;
       }
       else {
@@ -959,7 +965,7 @@
       delay(100); // Loop repeats at a frequency of ~10Hz
 
       gyroAngle = gyro_read(); // Get current angle reading from gyroscope sensor (range 0 to 359).
-      BluetoothSerial.println((String)"error: " + error + (String)", u: " + turnSpeed + (String)" Angle: " + gyroAngle);
+      BluetoothSerial.println((String)"error: " + gyroError[1] + (String)", u: " + angleEffort + (String)" Angle: " + gyroAngle);
     }
     stop();
   }
@@ -1014,10 +1020,10 @@
       right_rear_motor.writeMicroseconds(1500 - (u + angleEffort));
       right_font_motor.writeMicroseconds(1500 - (u + angleEffort));
 
-      BluetoothSerial.println((String)"Error: " + sonarError + (String)(" sonar: ") + sonar + (String)", u: " + u + (String)" anglemoved: " + angleMoved + (String)" Adjustment: " + angleEffort);
+      BluetoothSerial.println((String)"Error: " + sonarError[1] + (String)(" sonar: ") + sonar + (String)", u: " + u + (String)" anglemoved: " + gyroError[1] + (String)" Adjustment: " + angleEffort);
 
       // Loop exits if error remains in steady state for at least 500ms.
-      if ((abs(derivative) < 0.5) && abs(error) < 0.05 * abs(target)) {
+      if ((abs(sonarDerivative) < 0.5) && abs(sonarError[1]) < 0.05 * abs(target)) {
         timer -= 100;
       }
       else {
@@ -1038,6 +1044,8 @@
     float irGains[] = {10,50,0.05}; // Kp, Ki, and Kd gains for sonar
     float irIntegral = 0;
     float irDerivative = 0;
+    float irFront[] = {0,999};
+    float irBack[] ={0,999};
     
     float angle = 0;
     float angleEffort = 0;
@@ -1070,11 +1078,11 @@
         irError[1] = (irBack[0] + irFront[0])/2 - (target-7); // Error is average difference between IR sensors and target distance.
       }
 
-      PID_Control(sonarError, sonarGains, &sonarDerivative, &sonarIntegral, &integralLimit, &u, uLimit); // Calculate control effort for driving straight using PID control.
+      PID_Control(irError, irGains, &irDerivative, &irIntegral, &integralLimit, &u, uLimit); // Calculate control effort for driving straight using PID control.
       PID_Control(gyroError, gyroGains, &gyroDerivative, &gyroIntegral, &integralLimit, &angleEffort, angleEffortLimit); // Calculate control effort for angle correction using PID control.
 
       // Loop exits if error remains in steady state for at least 500ms.
-      if ((abs(derivative) < 0.5) && abs(error) < 0.05 * abs(target - 7)) {
+      if ((abs(irDerivative) < 0.5) && abs(irError[1]) < 0.05 * abs(target - 7)) {
         timer -= 100;
       }
       else {
