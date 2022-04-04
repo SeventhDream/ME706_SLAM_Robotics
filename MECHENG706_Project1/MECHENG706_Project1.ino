@@ -333,6 +333,8 @@
 
         SonarDistance(200 - 15 - (12 / 2)); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
         stop();
+
+        MiddleStrafe();
         
         //logic to strafe right into the right wall, then wall follow again
     } else {
@@ -348,6 +350,8 @@
           }
           forward = ~forward;
         }
+        
+        MiddleStrafe();
         
         //logic to strafe left into the wall, then wall follow again
     }
