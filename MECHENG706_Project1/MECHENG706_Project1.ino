@@ -322,7 +322,7 @@
         ultra = HC_SR04_range();
         while (ultra > 15) {
           initAngle = gyro_read();
-          forward(initAngle);
+          gyro_forward(initAngle);
           if (millis() - prev_millis > 500){
             prev_millis = millis();
             }
@@ -495,36 +495,36 @@
 
     void WallFollow() {
       float ultra = HC_SR04_range();
-      float error_long, error_short, long_IR, short_IR, left, integral_long, integral_short, travel_angle = 0;
-      float speed_long = 0;
-      float speed_short = 0;
-      float u_long = 0;
-      float u_short = 0;
+      float error_long, error_short, long_IR, short_IR, left, integral_long, integral_short, travel_angle, speed_long, speed_short, u_long, u_short = 0;
       float target = 8;
-      float tolerance = 0.5;
-      float integralLimit = 50;
-      float Ki = 0.05;
-      float Kp = 1;
-      int timer_long, timer_short = 500;
-      int base_speed = 1500;
 
       float FR_IR_Data[]={0,999};
       float FL_IR_Data[]={0,999};
       float BL_IR_Data[]={0,999};
       float BR_IR_Data[]={0,999};
 
+      //controller arrays
+      float long_feedback[]={0,500};
+      float short_feedback[]={0,500};
 
       // Determining if the wall is on the left or right
       //Serial.println((String)"Initial IR distances are: " + (String)" IR Long Right = " + FR_IR_Data[0] + (String)" IR Long Left = " + FL_IR_Data[0] + (String)" IR Short Right = " + BR_IR_Data[0] + (String) " IR Short Left = " + );
 
       // Closed loop controls
-      while (timer_long > 0 || ultra > 15) {
-
+      // While long and short timers have not settled at same error for more than 500ms and ultra is more than 15cm away.
+      while (long_feedback[1] > 0 && short_feedback[1]>0 && ultra > 15) {
         //Rereading sensor values
         FR_IR(FR_IR_Data);
         FL_IR(FL_IR_Data);
         BR_IR(BR_IR_Data);
         BL_IR(BL_IR_Data);
+        ultra = HC_SR04_range();
+        travel_angle = gyro_read();
+
+        //wrap travel angle
+        if(travel_angle>90){
+          travel_angle=360-travel_angle;
+        }
 
         //Setting up interupt to start printing coordinates every 0.5sec
         if (start_printing = 0) {
@@ -532,9 +532,6 @@
           x = 0;
           y = 0;
         }
-
-        ultra = HC_SR04_range();
-        travel_angle = gyro_read();
 
         if ((FR_IR_Data[0] - target) < (FL_IR_Data[0] - target)) { //indicates whether the wall is on left side or right side
           //Serial.println("Wall is on the right!");
@@ -554,102 +551,38 @@
         error_long = target - long_IR;
         error_short = target - short_IR;
         //Serial.println((String)"Errors are: " + (String)" Long IR = " + error_long + (String)" Short IR = " + error_short);
-
+      
+        controller(error_long, 10, 50, 0.05, 5,0.5,long_feedback);
+        controller(error_short, 10, 50, 0.05, 5,0.5,short_feedback);
+        
         //  Serial.println((String)"Current Long IR is: " + long_IR + (String)", Error is: " + error_long + (String));
         //  Serial.println((String)"Current Short IR is: " + short_IR + (String)", Error is: " + error_short + (String));
 
-        // Stop integrating if actuators are saturated.
-        if (abs(error_long) < integralLimit) {
-          integral_long = integral_long + error_long * Ki; // Integrate the error with respect to loop frequency (~10Hz).
-        }
-        else {
-          integral_long = 0; // Disable integral
-        }
-
-        if (abs(error_short) < integralLimit) {
-          integral_short = integral_short + error_short * Ki; // Integrate the error with respect to loop frequency (~10Hz).
-        }
-        else {
-          integral_short = 0; // Disable integral
-        }
-
-        u_long = Kp * error_long + Ki * integral_long; // Calculate the control effort to reach target distance.
-        //speed_long = constrain(u_long, -500, 500);
+        //speed_long = constrain(long_feedback[0], -500, 500);
         //For some reason this constrain function isn't working, but the one below is :'D
 
-        if (u_long < -500) {
-          speed_long = -20;
-        } else if (u_long > 500) {
-          speed_long = 20;
+        if (long_feedback[0] < -500) {
+          speed_long = -500;
+        } else if (long_feedback[0]> 500) {
+          speed_long = 500;
         } else {
-          speed_long = u_long;
+          speed_long = long_feedback[0];
         }
 
-        u_short = Kp * error_short + Ki * integral_short; // Calculate the control effort to reach target distance.
-        speed_short = constrain(u_short, -20, 20);
+        speed_short = constrain(short_feedback[0], -500, 500);
+        forward(long_feedback[0],short_feedback[0]); //??????????????????? would kind of average out
 
         //Serial.println((String)" Control Actions are: " + (String)" Long IR = " + u_long + (String)" Short IR = " + u_short);
         //Serial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_long + (String)" Left Side = " + speed_short);
 
-        //Rotate slight left or right depending on wall position and gyro reading
-        while ((360 - travel_angle) > 5 && (360 - travel_angle) < 45 ) {
-          Serial.println("turning right");
-          slight_right(speed_short, speed_long);
-          travel_angle = gyro_read();
-        }
-        while (travel_angle > 5 && travel_angle < 45 ) {
-          Serial.println("turning left");
-          slight_left(speed_short, speed_long);
-          travel_angle = gyro_read();
-        }
-        // if travel angle is small, keep travelling straight
-
-        while (travel_angle < 5 || (360 - travel_angle) < 5) {
+        // if travel angle is big, adjust with gyro
+        while (travel_angle > 5) {
           Serial.println("drive straight");
-          forward(travel_angle);
+          gyro_forward(travel_angle);
           travel_angle = gyro_read();
         }
-        //Rotate ccw if speed_short and speed_long are positive based on IR
-        //was an else below:
-        //case 1 and case 4
-        //     else if ((left==1 && (FL_IR_Data[0]>BL_IR_Data[0]))||(left==0 && (FR_IR_Data[0]<BR_IR_Data[0]))){
-        //      left_font_motor.writeMicroseconds(base_speed - (speed_val + speed_short));
-        //      left_rear_motor.writeMicroseconds(base_speed - (speed_val + speed_short));
-        //      right_rear_motor.writeMicroseconds(base_speed - (speed_val + speed_long));
-        //      right_font_motor.writeMicroseconds(base_speed - (speed_val + speed_long));
-        //    }
-        //
-        //    //Rotate cw if speed_sort and speed_long are negative based on IR
-        //    else if ((left==1 && (FL_IR_Data[0]<BL_IR_Data[0]))||(left==0 && (FR_IR_Data[0]>BR_IR_Data[0]))){
-        //      left_font_motor.writeMicroseconds(base_speed + (speed_val + speed_short));
-        //      left_rear_motor.writeMicroseconds(base_speed + (speed_val + speed_short));
-        //      right_rear_motor.writeMicroseconds(base_speed + (speed_val + speed_long));
-        //      right_font_motor.writeMicroseconds(base_speed + (speed_val + speed_long));
-        //    }
-
+        
       }
-    }
-
-    void slight_left (float speed_short, float speed_long) {
-      left_font_motor.writeMicroseconds(1500 - (speed_val + speed_short));
-      left_rear_motor.writeMicroseconds(1500 + (speed_val + speed_short));
-      right_rear_motor.writeMicroseconds(1500 - (speed_val - speed_long));
-      right_font_motor.writeMicroseconds(1500 - (speed_val - speed_long));
-    }
-
-    void slight_right (float speed_short, float speed_long) {
-      left_font_motor.writeMicroseconds(1500 + (speed_val + speed_short));
-      left_rear_motor.writeMicroseconds(1500 + (speed_val + speed_short));
-      right_rear_motor.writeMicroseconds(1500 - (speed_val - speed_long));
-      right_font_motor.writeMicroseconds(1500 + (speed_val - speed_long));
-    }
-
-    void cw ()
-    {
-      left_font_motor.writeMicroseconds(1500 + speed_val);
-      left_rear_motor.writeMicroseconds(1500 + speed_val);
-      right_rear_motor.writeMicroseconds(1500 + speed_val);
-      right_font_motor.writeMicroseconds(1500 + speed_val);
     }
 
     void AlignToWall(boolean isLeft) {
@@ -712,7 +645,6 @@
 
         delay(100); // Loop repeats at a frequency of ~10Hz
 
-
       }
       stop();
     }
@@ -735,6 +667,14 @@
       right_font_motor.writeMicroseconds(1500 + speed_val);
     }
 
+    void cw ()
+    {
+      left_font_motor.writeMicroseconds(1500 + speed_val);
+      left_rear_motor.writeMicroseconds(1500 + speed_val);
+      right_rear_motor.writeMicroseconds(1500 + speed_val);
+      right_font_motor.writeMicroseconds(1500 + speed_val);
+    }
+
     // Pivot counter clockwise at a fixed speed value
     void ccw ()
     {
@@ -744,6 +684,13 @@
       right_font_motor.writeMicroseconds(1500 - speed_val);
     }
 
+    void forward(float adjustment){
+        //+VE adjustment IS CW
+        left_font_motor.writeMicroseconds(1500 + (adjustment-correction));
+        left_rear_motor.writeMicroseconds(1500 + (adjustment-correction));
+        right_rear_motor.writeMicroseconds(1500 - (adjustment+correction));
+        right_font_motor.writeMicroseconds(1500 - (adjustment+correction));
+    }
 
     //Drive straight until hitting a wall
     void driveToWall()
@@ -760,7 +707,7 @@
 
       while ((FR_IR_Data[0]> 15) && (FL_IR_Data[0] > 15)) {
         Serial.println("While Loop entered");
-        forward(initAngle);
+        gyro_forward(initAngle);
         FR_IR(FR_IR_Data);
         FL_IR(FL_IR_Data);
       }
@@ -902,47 +849,59 @@
     }
 
     // Continuously move platform forward.
-    void forward(float initialAngle)
+    void gyro_forward(float initialAngle)
     {
-      //wrap initial angle
-      if (initialAngle > 90) {
-        initialAngle = 360 - initialAngle;
+      float angleMoved=0;
+      float feedback[]={0,500};//controller feedback array, where feedback[0] is u and feedback[1] is timer
+
+      //while timer is greater than 0, the error hasn't been settled for more than 5 ms.
+      while(feedback[1]>0){
+        //wrap initial angle
+        if (initialAngle > 90) {
+          initialAngle = 360 - initialAngle;
+        }
+    
+        //wrap angle moved
+        if (gyro_read() > 90) {
+          angleMoved = (360-gyro_read())-initialAngle;
+        }else{
+          angleMoved = gyro_read()-initialAngle;
+        }
+  
+        controller(angleMoved, 10, 0.1, 0, 10,1,feedback);
+        forward(feedback[0],0);
+        Serial.println((String)("error: ") + angleMoved + (String)", adjustment: " + feedback[0]);
       }
-
-      float angleMoved =  gyro_read() - initialAngle;
-
-      //wrap angle moved
-      if (angleMoved > 90) {
-        angleMoved = angleMoved - 360;
-      }
-
-      //Serial.print("Angle moved value is: ");
-      //Serial.println(angleMoved);
-
-      float adjustment = controller(angleMoved, 10, 0.1);
-
-      //+VE IS CW
-      left_font_motor.writeMicroseconds(1500 + (speed_val - adjustment));
-      left_rear_motor.writeMicroseconds(1500 + (speed_val - adjustment));
-      right_rear_motor.writeMicroseconds(1500 - (speed_val + adjustment));
-      right_font_motor.writeMicroseconds(1500 - (speed_val + adjustment));
-      Serial.println((String)("error: ") + angleMoved + (String)", Current angle: " + currentAngle);
-
     }
 
     // PI controller helper function
-    float controller(float error, float kp, float ki) {
-      float integral, u = 0;
+    void controller(float error, float kp, float ki, float kd, float integral_limit, float error_limit, float feedback[]) {
+      
+      float integral, lastError, derivative= 0;
 
       integral = integral + error*0.01;
 
       //to prevent integral windup
-      if (error > 10) {
+      if (error > integral_limit) {
         integral = 0;
       }
 
-      u = kp * error + ki * integral;
-      return u;
+      // Calculate derivative of error.
+      derivative =  error - lastError;
+      lastError = error; // Update last error calculated.
+
+      // Loop exits if error remains in steady state for at least 500ms.
+      if ((derivative == 0) && (error < error_limit)) {
+        feedback[1]-= 100;
+      }
+      else {
+        feedback[1] = 500;
+      }
+
+      feedback[0] = kp * error + ki * integral+ kd*derivative;
+
+      //modifying feedback array to be accessed in the higher level function
+      
     }
 
     void Localise(){
@@ -1147,7 +1106,7 @@
         if (angleMoved > 90) {
           angleMoved = angleMoved - 360;
         }
-        adjustment = controller(angleMoved, 10, 0.1);
+        adjustment = ki_controller(angleMoved, 10, 0.1);
         correction = constrain(adjustment,-50,50);
         
         //+VE IS CW
@@ -1235,7 +1194,7 @@
         if (angleMoved > 90) {
           angleMoved = angleMoved - 360;
         }
-        adjustment = controller(angleMoved, 10, 0.1);
+        adjustment = ki_controller(angleMoved, 10, 0.1);
         correction = constrain(adjustment,-50,50);
         correction = 0;
         //+VE IS CW
@@ -1263,6 +1222,18 @@
         delay(100); // ~10Hz
       } while (timer >= 0); // Terminate once within desired tolerance.
       stop();
+    }
+
+    float ki_controller(float error, float kp, float ki) {
+      float integral, u = 0;
+      integral = integral + error*0.01;
+
+      //to prevent integral windup
+      if (error > 10) {
+        integral=0;
+      }
+      u = kp * error + ki * integral;
+      return u;
     }
 //#pragma endregion end
 
