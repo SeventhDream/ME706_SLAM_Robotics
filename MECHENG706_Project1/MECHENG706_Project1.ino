@@ -340,9 +340,10 @@
         //logic to strafe right into the right wall, then wall follow again
     } else {
         //wall is on the right of the robot
+        int isLeft = 1;
 
         for (int i = 0; i < 3; i++) {
-          MiddleStrafe();
+          MiddleStrafe1(isLeft);
           if (forward) {
             SonarDistance(15);
           }
@@ -356,7 +357,7 @@
     }
   }
 
-  void MiddleStrafe() {
+  void MiddleStrafex() {
     int half_second_count = 0;
     float prev_millis = millis();
     int strafe_time = 1; //[seconds]
@@ -371,6 +372,10 @@
          }
         }
         stop();
+  }
+
+  void MiddleStrafe1(int isLeft) {
+    StrafeDistance(22.5, isLeft);
   }
 
   void FindCorner()
