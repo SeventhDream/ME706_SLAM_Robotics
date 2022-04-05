@@ -316,7 +316,7 @@
         
         MiddleStrafe();
 
-        SonarDistance(15);
+        SonarDistance(15 (12 / 2));
         stop();
         /*
         //OLD CODE (for reference)
@@ -334,6 +334,8 @@
 
         SonarDistance(200 - 15 - (12 / 2)); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
         stop();
+
+        MiddleStrafe();
         
         //logic to strafe right into the right wall, then wall follow again
     } else {
@@ -342,13 +344,15 @@
         for (int i = 0; i < 3; i++) {
           MiddleStrafe();
           if (forward) {
-            SonarDistance(15);
+            SonarDistance(15 (12 / 2));
           }
           else {
             SonarDistance(200 - 15 - (12 / 2)); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
           }
           forward = ~forward;
         }
+        
+        MiddleStrafe();
         
         //logic to strafe left into the wall, then wall follow again
     }
