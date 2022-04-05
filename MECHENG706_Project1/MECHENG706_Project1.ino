@@ -184,12 +184,13 @@
     //     } 
     //StrafeDistance(15,false);  
     BluetoothSerial.println("WHERE AM I?");
-      Localise();
+     //Localise();
       //TurnByAngle(90);
       //AlignToWall(true);
       //FindCorner();
     //SonarDistance(15);
-    //WallFollow();
+    //gyro_forward(0);
+    WallFollow();
     //delay(10000);
 
     Serial.println("Finished the course.");
@@ -495,8 +496,12 @@
 
     void WallFollow() {
       float ultra = HC_SR04_range();
+      float initialAngle = 0;
+      float angleMoved,GyroAngle=0;
+
       float error_long, error_short, long_IR, short_IR, left, integral_long, integral_short, travel_angle, speed_long, speed_short, u_long, u_short = 0;
       float target = 8;
+      float strafe_thresh=10; //if teh robot is more than 10cm away from the target distance, robot will strafe.
 
       float FR_IR_Data[]={0,999};
       float FL_IR_Data[]={0,999};
@@ -506,6 +511,7 @@
       //controller arrays
       float long_feedback[]={0,500};
       float short_feedback[]={0,500};
+      float gyro_feedback[]={0,500};
 
       // Determining if the wall is on the left or right
       //Serial.println((String)"Initial IR distances are: " + (String)" IR Long Right = " + FR_IR_Data[0] + (String)" IR Long Left = " + FL_IR_Data[0] + (String)" IR Short Right = " + BR_IR_Data[0] + (String) " IR Short Left = " + );
@@ -523,7 +529,7 @@
 
         //wrap travel angle
         if(travel_angle>90){
-          travel_angle=360-travel_angle;
+          travel_angle=travel_angle-360;
         }
 
         //Setting up interupt to start printing coordinates every 0.5sec
@@ -547,38 +553,47 @@
         }
         //Serial.println((String)"IR distances are: " + (String)" IR Long Right = " + FR_IR_Data[0] + (String)" IR Long Left = " + FL_IR_Data[0] + (String)" IR Short Right = " + BR_IR_Data[0] + (String) " IR Short Left = " + BL_IR_Data[0]);
 
+        GyroAngle=gyro_read();
+        
+        //wrap angle moved
+        if (GyroAngle> 90) {
+          angleMoved = (360- GyroAngle)-initialAngle;
+        }else{
+          angleMoved= GyroAngle-initialAngle; 
+        }
+        
         //Calculate errors
         error_long = target - long_IR;
         error_short = target - short_IR;
         //Serial.println((String)"Errors are: " + (String)" Long IR = " + error_long + (String)" Short IR = " + error_short);
-      
+        
+        BluetoothSerial.println((String)"Current Long IR is: " + long_IR + (String)", Error is: " + error_long+(String)"Current Short IR is: " + short_IR + (String)", Error is: " + error_short);
+
+        //If wall is too far, strafe left or right.
+        if((((error_long+error_short)/2)<(-1*strafe_thresh)&&left==1)||((((error_long+error_short)/2)>strafe_thresh) &&left==0)){
+          StrafeDistance(abs(error_long+error_short)/2,true);
+        }else if ((((error_long+error_short)/2)<(-1*strafe_thresh)&&left==0)||((((error_long+error_short)/2)>strafe_thresh) &&left==1)){
+          StrafeDistance(abs(error_long+error_short)/2,false);
+        }
+        
         controller(error_long, 10, 50, 0.05, 5,0.5,long_feedback);
         controller(error_short, 10, 50, 0.05, 5,0.5,short_feedback);
-        
-        //  Serial.println((String)"Current Long IR is: " + long_IR + (String)", Error is: " + error_long + (String));
-        //  Serial.println((String)"Current Short IR is: " + short_IR + (String)", Error is: " + error_short + (String));
+        controller(angleMoved, 5, 50, 0, 5,1,gyro_feedback);
 
-        //speed_long = constrain(long_feedback[0], -500, 500);
-        //For some reason this constrain function isn't working, but the one below is :'D
+        BluetoothSerial.println((String)"long adjustment " + long_feedback[0] + (String)", short adjustment: " + short_feedback[0]);
 
-        if (long_feedback[0] < -500) {
-          speed_long = -500;
-        } else if (long_feedback[0]> 500) {
-          speed_long = 500;
-        } else {
-          speed_long = long_feedback[0];
-        }
-
+        speed_long = constrain(long_feedback[0], -500, 500);
         speed_short = constrain(short_feedback[0], -500, 500);
-        forward(long_feedback[0],short_feedback[0]); //??????????????????? would kind of average out
+        drive_forward((long_feedback[0]+short_feedback[0])/2,0); //??????????????????? would kind of average out STARTS STRAFING
 
-        //Serial.println((String)" Control Actions are: " + (String)" Long IR = " + u_long + (String)" Short IR = " + u_short);
-        //Serial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_long + (String)" Left Side = " + speed_short);
-
+        
+        //BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + long_feedback[0] + (String)" Left Side = " + short_feedback[0]);
+        //BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_long + (String)" Left Side = " + speed_short);
+        
         // if travel angle is big, adjust with gyro
-        while (travel_angle > 5) {
-          Serial.println("drive straight");
-          gyro_forward(travel_angle);
+        while (abs(travel_angle) > 5) {
+          BluetoothSerial.println("Gyro forward!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+          gyro_forward(initialAngle);
           travel_angle = gyro_read();
         }
         
@@ -684,12 +699,17 @@
       right_font_motor.writeMicroseconds(1500 - speed_val);
     }
 
-    void forward(float adjustment){
+    void drive_forward(float adjustment, float correction){
+
+      adjustment=constrain(adjustment,-150,150);
+      correction=constrain(correction,-150,150);
+      BluetoothSerial.println((String)"adjustment is: "+correction);
+      
         //+VE adjustment IS CW
-        left_font_motor.writeMicroseconds(1500 + (adjustment-correction));
-        left_rear_motor.writeMicroseconds(1500 + (adjustment-correction));
-        right_rear_motor.writeMicroseconds(1500 - (adjustment+correction));
-        right_font_motor.writeMicroseconds(1500 - (adjustment+correction));
+        left_font_motor.writeMicroseconds(1500 + (speed_val+adjustment+correction));
+        left_rear_motor.writeMicroseconds(1500 + (speed_val+adjustment+correction));
+        right_rear_motor.writeMicroseconds(1500 - (speed_val+adjustment-correction));
+        right_font_motor.writeMicroseconds(1500 - (speed_val+adjustment-correction));
     }
 
     //Drive straight until hitting a wall
@@ -850,27 +870,31 @@
 
     // Continuously move platform forward.
     void gyro_forward(float initialAngle)
-    {
-      float angleMoved=0;
+    { 
+      float angleMoved,GyroAngle=0;
       float feedback[]={0,500};//controller feedback array, where feedback[0] is u and feedback[1] is timer
-
+      float ultra = HC_SR04_range();
       //while timer is greater than 0, the error hasn't been settled for more than 5 ms.
-      while(feedback[1]>0){
+      while(feedback[1]>0 || ultra>15){
         //wrap initial angle
         if (initialAngle > 90) {
-          initialAngle = 360 - initialAngle;
+          initialAngle = initialAngle-360;
         }
-    
+
+        GyroAngle=gyro_read();
+        
         //wrap angle moved
-        if (gyro_read() > 90) {
-          angleMoved = (360-gyro_read())-initialAngle;
+        if (GyroAngle> 90) {
+          angleMoved = (360- GyroAngle)-initialAngle;
         }else{
-          angleMoved = gyro_read()-initialAngle;
+          angleMoved= GyroAngle-initialAngle; 
         }
-  
-        controller(angleMoved, 10, 0.1, 0, 10,1,feedback);
-        forward(feedback[0],0);
-        Serial.println((String)("error: ") + angleMoved + (String)", adjustment: " + feedback[0]);
+        
+        BluetoothSerial.println((String)("initial angle is : ") + initialAngle+(String)("angle reading: ") +  GyroAngle+(String)("error: ") + angleMoved + (String)", adjustment: " + feedback[0]);
+
+        controller(angleMoved, 10, 50, 0, 5,1,feedback);
+        drive_forward(0,feedback[0]);
+        ultra = HC_SR04_range();
       }
     }
 
@@ -891,7 +915,7 @@
       lastError = error; // Update last error calculated.
 
       // Loop exits if error remains in steady state for at least 500ms.
-      if ((derivative == 0) && (error < error_limit)) {
+      if ((derivative == 0) && (error < error_limit)&& (error!=0)) {
         feedback[1]-= 100;
       }
       else {
@@ -1200,7 +1224,7 @@
         //+VE IS CW
         float test = (irBack[0] + irFront[0])/2;
         float plote = initialIR - error;
-        BluetoothSerial.println((String)"Error: " + error + (String)(", measured distance: ") + test + (String)", u: " + effort);
+        //BluetoothSerial.println((String)"Error: " + error + (String)(", measured distance: ") + test + (String)", u: " + effort);
   //      Serial.print("Error:");
   //      Serial.print(target - 7 - error);
   //      Serial.print(",");
