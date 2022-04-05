@@ -315,7 +315,7 @@
         
         MiddleStrafe();
 
-        SonarDistance(15);
+        SonarDistance(15 (12 / 2));
         stop();
         /*
         //OLD CODE (for reference)
@@ -343,7 +343,7 @@
         for (int i = 0; i < 3; i++) {
           MiddleStrafe();
           if (forward) {
-            SonarDistance(15);
+            SonarDistance(15 (12 / 2));
           }
           else {
             SonarDistance(200 - 15 - (12 / 2)); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
