@@ -172,6 +172,8 @@
     
     
     Serial.println("Started the course.");
+    MiddleLogic();
+    //MiddleStrafe(1);
     //      while (1) {
     //        
     //        FR_IR(frontR);
@@ -190,7 +192,7 @@
       //delay(3000);
       //TurnByAngle(-90);
       //AlignToWall(true);
-      FindCorner();
+      //FindCorner();
     //SonarDistance(15);
     //WallFollow();
     //delay(10000);
@@ -256,6 +258,12 @@
 
   void ISR1() {
     Coord();
+    BluetoothSerial.println("Coordinate Interrupt!");
+    BluetoothSerial.println("Coordinate Interrupt!");
+    BluetoothSerial.print("(x, y) = ");
+    BluetoothSerial.print(x);
+    BluetoothSerial.print(", ");
+    BluetoothSerial.print(y);
   }
 
 //#pragma endregion end
@@ -280,12 +288,17 @@
     unsigned long prev_millis = millis();
     float half_second_count = 0;
     float strafe_time = 1; ///**NEED TO TUNE
-    bool forward = 0;
+    bool Forward = 0;
+    bool isLeft = 0;
+
+    x = 85; //TEMP
+    y = 15; //TEMP
 
     if (((FR_IR_Data[0] + BR_IR_Data[0]) / 2) > ((FL_IR_Data[0] + BL_IR_Data[0]) / 2)) {
         //wall is on the left of the robot
-
-        MiddleStrafe();
+        isLeft = 0;
+        BluetoothSerial.println("Wall is on the left!");
+        MiddleStrafe(isLeft);
         
         /*
         //OLD CODE (for reference)
@@ -302,7 +315,7 @@
           stop();
           */
 
-        SonarDistance(200 - 15 - (12 / 2)); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
+        SonarDistance(200 - 15 - 24 ); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
         stop();
         
         /*
@@ -316,7 +329,7 @@
       stop();*/
         
         
-        MiddleStrafe();
+        MiddleStrafe(isLeft);
 
         SonarDistance(15);
         stop();
@@ -332,39 +345,47 @@
         }
         stop();*/
 
-        MiddleStrafe();
+        MiddleStrafe(isLeft);
 
-        SonarDistance(200 - 15 - (12 / 2)); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
+        SonarDistance(200 - 15 - 24); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
+
+        MiddleStrafe(isLeft);
         stop();
         
         //logic to strafe right into the right wall, then wall follow again
     } else {
         //wall is on the right of the robot
-        int isLeft = 1;
+        isLeft = 1;
 
         for (int i = 0; i < 3; i++) {
-          MiddleStrafe1(isLeft);
-          if (forward) {
+          MiddleStrafe(isLeft);
+          if (Forward) {
             SonarDistance(15);
           }
           else {
             SonarDistance(200 - 15 - (12 / 2)); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
           }
-          forward = ~forward;
+          Forward= ~Forward;
         }
+
+        MiddleStrafe(isLeft);
         
         //logic to strafe left into the wall, then wall follow again
     }
   }
 
-  void MiddleStrafex() {
+  void MiddleStrafe(bool Left) {
     int half_second_count = 0;
     float prev_millis = millis();
     int strafe_time = 1; //[seconds]
     
     while (half_second_count < strafe_time * 2) { //need to be tuned
-        strafe_right();
-        prev_millis = millis();
+        if (Left) {
+          strafe_left();
+        }
+        else {
+          strafe_right();
+        }
         y = y + (half_second_count * (22.5 / (strafe_time * 2)));
         if (millis() - prev_millis > 500) {
           prev_millis = millis();
@@ -1040,7 +1061,7 @@
       right_rear_motor.writeMicroseconds(1500 + (-u - angleEffort));
       right_font_motor.writeMicroseconds(1500 + (-u - angleEffort));
 
-      BluetoothSerial.println((String)"Error: " + sonarError[1] + (String)(" sonar: ") + sonar + (String)", u: " + u + (String)" anglemoved: " + gyroError[1] + (String)" Adjustment: " + angleEffort + (String)"FrontL: " + frontL[0] + (String)" frontR: " + frontR[0]);
+      //BluetoothSerial.println((String)"Error: " + sonarError[1] + (String)(" sonar: ") + sonar + (String)", u: " + u + (String)" anglemoved: " + gyroError[1] + (String)" Adjustment: " + angleEffort + (String)"FrontL: " + frontL[0] + (String)" frontR: " + frontR[0]);
 
       // Loop exits if error remains in steady state for at least 500ms.
       if ((abs(sonarDerivative) < 5) && abs(sonarError[1]) < 0.1 * abs(target)) {
