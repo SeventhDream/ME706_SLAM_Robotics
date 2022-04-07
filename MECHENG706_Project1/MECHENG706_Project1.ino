@@ -175,7 +175,7 @@
     BluetoothSerial.println("=============================================================");
     BluetoothSerial.println("Started the course.");
         BluetoothSerial.println("=============================================================");
-    //MiddleLogic();
+    MiddleLogic();
     //MiddleStrafe(1);
     //      while (1) {
     //        
@@ -197,8 +197,8 @@
       //AlignToWall(true);
       //FindCorner();
       //BluetoothSerial.println("Driving Forward");
-    SonarDistance(15,initAngle,true);
-    SonarDistance(160,initAngle,true);
+    //SonarDistance(15,initAngle,true);
+    //SonarDistance(160,initAngle,true);
     //BluetoothSerial.println("STOPPED");
     delay(1000);
     //BluetoothSerial.println("Driving Backward");
@@ -397,11 +397,20 @@
     //while (half_second_count < strafe_time * 2) { //need to be tuned
         if (Left) {
               BluetoothSerial.println("Strafing Using Right Sesnors");
-          StrafeDistance(y_distance,false);
+              if (y_distance < 60){
+               StrafeDistance(y_distance,false);
+              } else{
+          StrafeDistance(y_distance,true);
+        }
         }
         else {
           BluetoothSerial.println("Strafing Using Right Sesnors");
-          StrafeDistance(y_distance,true);
+         if (y_distance < 60){
+               StrafeDistance(y_distance,true);
+              }
+              else{
+          StrafeDistance(y_distance,false);
+        }
         }
 //        y = y + (half_second_count * (22.5 / (strafe_time * 2)));
 //        if (millis() - prev_millis > 500) {
@@ -1061,7 +1070,7 @@
     float u = 0;
     float uLimit[] = {-250,250}; //Limit maximuim effort signal for sonar.
     float sonarError[] = {0,0};
-    float sonarGains[] = {30,10,0.001}; // Kp, Ki, and Kd gains for sonar
+    float sonarGains[] = {30,0.1,0.001}; // Kp, Ki, and Kd gains for sonar
     float sonarIntegral = 0;
     float sonarDerivative = 0;
     
@@ -1069,13 +1078,13 @@
     float angleEffort = 0;
     float angleEffortLimit[] = {-150,150};
     float gyroError[] = {0,0};
-    float gyroGains[] = {10,0.1,0};
+    float gyroGains[] = {15,0.1,0};
     float gyroIntegral = 0;
     float gyroDerivative = 0;
     
     //float initialAngle = gyro_read();
     float current_Angle = initialAngle;
-    float integralLimit = 5; // Set max error boundary for integral gain to be applied to control system
+    float integralLimit = uLimit[1]/sonarGains[0]; // Set max error boundary for integral gain to be applied to control system
     int timer = 500; // Initialise tolerance timer.
 
 
@@ -1140,7 +1149,7 @@
     float u = 0;
     float uLimit[] = {-250,250}; //Limit maximuim effort signal for sonar.
     float irError[] = {0,0};
-    float irGains[] = {15,25,0.001}; // Kp, Ki, and Kd gains for sonar
+    float irGains[] = {30,0.1,0.001}; // Kp, Ki, and Kd gains for sonar
     float irIntegral = 0;
     float irDerivative = 0;
     float irFront[] = {0,999};
@@ -1150,14 +1159,14 @@
     float angleEffort = 0;
     float angleEffortLimit[] = {-150,150};
     float gyroError[] = {0,0}; // [lastError,error] for gyro
-    float gyroGains[] = {10,0.1,0}; // Kp, Ki, and Kd gains for gyro
+    float gyroGains[] = {15,0.1,0}; // Kp, Ki, and Kd gains for gyro
     float gyroIntegral = 0;
     float gyroDerivative = 0;
 
     
     float initialAngle = gyro_read();
     float current_Angle = initialAngle;
-    float integralLimit = 10; // Set max error boundary for integral gain to be applied to control system
+    float integralLimit = uLimit[1]/irGains[0]; // Set max error boundary for integral gain to be applied to control system
     int timer = 500; // Initialise tolerance timer.
   
 
