@@ -105,6 +105,7 @@
       sum += sensorValue;
       delay(5);
     }
+    previous_millis = gyro_read();
     gyroZeroVoltage = sum / 100;   //average the sum as the zero drifting
     pinMode(TRIG_PIN, OUTPUT);     //the Trigger pin will tell the sensor to range find
     digitalWrite(TRIG_PIN, LOW);
@@ -175,7 +176,9 @@
     BluetoothSerial.println("=============================================================");
     BluetoothSerial.println("Started the course.");
         BluetoothSerial.println("=============================================================");
-    MiddleLogic();
+    AlignToWall(true);
+    testStrafe();
+    //altMiddleLogic();
     //MiddleStrafe(1);
     //      while (1) {
     //        
@@ -281,8 +284,41 @@
 //=============================================================
 //#pragma region 3.2 MOTOR MOVEMENT FUNCTIONS
 //=============================================================
+  // alternative middle logic with hardcoded behaviour logic
+  void altMiddleLogic(){
+    float FR_IR_Data[] = {0,999};
+    FR_IR(FR_IR_Data);
+    float FL_IR_Data[] = {0,999};
+    FL_IR(FL_IR_Data);
+    float BR_IR_Data[] = {0,999};
+    BR_IR(BR_IR_Data);
+    float BL_IR_Data[] = {0,999};
+    BL_IR(BL_IR_Data);
 
-  
+    float iAngle = gyro_read();
+    
+    if (((FR_IR_Data[0] + BR_IR_Data[0]) / 2) > ((FL_IR_Data[0] + BL_IR_Data[0]) / 2)) {
+      SonarDistance(160,iAngle,true);
+      StrafeDistance(32.5,true,iAngle);
+      SonarDistance(15,iAngle,true);
+      StrafeDistance(60,true,iAngle);
+      SonarDistance(160,iAngle,true);
+      StrafeDistance(32.5,false,iAngle);
+      SonarDistance(15,iAngle,true);
+      StrafeDistance(15,false,iAngle);
+      
+    }
+    else{
+      SonarDistance(160,iAngle,true);
+      StrafeDistance(32.5,false,iAngle);
+      SonarDistance(15,iAngle,true);
+      StrafeDistance(60,false,iAngle);
+      SonarDistance(160,iAngle,true);
+      StrafeDistance(32.5,true,iAngle);
+      SonarDistance(15,iAngle,true);
+      StrafeDistance(15,true,iAngle);
+    }
+  }
   void MiddleLogic() {
     
     //Reading sensor values
@@ -311,7 +347,7 @@
         //wall is on the left of the robot
         isLeft = 0;
         BluetoothSerial.println("Wall is on the left!");
-        MiddleStrafe(isLeft);
+        MiddleStrafe(isLeft,iAngle);
         
         
         /*
@@ -343,7 +379,7 @@
       stop();*/
         
         
-        MiddleStrafe(isLeft);
+        MiddleStrafe(isLeft,iAngle);
 
         SonarDistance(15,iAngle, true);
         stop();
@@ -359,11 +395,11 @@
         }
         stop();*/
 
-        MiddleStrafe(isLeft);
+        MiddleStrafe(isLeft,iAngle);
 
         SonarDistance(200 - 15 - 24,iAngle, true); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
 
-        MiddleStrafe(isLeft);
+        MiddleStrafe(isLeft,iAngle);
         stop();
         
         //logic to strafe right into the right wall, then wall follow again
@@ -373,7 +409,7 @@
         isLeft = 1;
 
         for (int i = 0; i < 3; i++) {
-          MiddleStrafe(isLeft);
+          MiddleStrafe(isLeft,iAngle);
           if (Forward) {
             SonarDistance(15,iAngle, true);
           }
@@ -383,33 +419,32 @@
           Forward= ~Forward;
         }
 
-        MiddleStrafe(isLeft);
+        MiddleStrafe(isLeft,iAngle);
         
         //logic to strafe left into the wall, then wall follow again
     }
   }
 
-  void MiddleStrafe(bool Left) {
+  void MiddleStrafe(bool Left, float iAngle) {
     int half_second_count = 0;
     float prev_millis = millis();
     int strafe_time = 1; //[seconds]
-    
     //while (half_second_count < strafe_time * 2) { //need to be tuned
         if (Left) {
               BluetoothSerial.println("Strafing Using Right Sesnors");
               if (y_distance < 60){
-               StrafeDistance(y_distance,false);
+               StrafeDistance(y_distance,false,iAngle);
               } else{
-          StrafeDistance(y_distance,true);
+          StrafeDistance(y_distance,true,iAngle);
         }
         }
         else {
           BluetoothSerial.println("Strafing Using Right Sesnors");
          if (y_distance < 60){
-               StrafeDistance(y_distance,true);
+               StrafeDistance(y_distance,true,iAngle);
               }
               else{
-          StrafeDistance(y_distance,false);
+          StrafeDistance(y_distance,false,iAngle);
         }
         }
 //        y = y + (half_second_count * (22.5 / (strafe_time * 2)));
@@ -422,8 +457,8 @@
         stop();
   }
 
-  void MiddleStrafe1(int isLeft) {
-    StrafeDistance(22.5, isLeft);
+  void MiddleStrafe1(int isLeft,float iAngle) {
+    StrafeDistance(22.5, isLeft,iAngle);
   }
 
   void FindCorner()
@@ -927,6 +962,29 @@
     }
   }
 
+  void testStrafe(){
+    // Initialise variables
+    float FR_IR_Data[] = {0,999};
+    float FL_IR_Data[] = {0,999};
+    float BL_IR_Data[] = {0,999};
+    float BR_IR_Data[] = {0,999};
+    float iAngle = 0;
+    iAngle = gyro_read();
+    
+    FL_IR(FL_IR_Data);
+    FR_IR(FR_IR_Data);
+    BL_IR(BL_IR_Data);
+    BR_IR(BR_IR_Data); 
+      StrafeDistance(15,true,iAngle);
+      delay(100);
+      StrafeDistance(32.5,true,iAngle);
+      delay(1000);
+      StrafeDistance(60,true,iAngle);
+      delay(1000);
+      StrafeDistance(32.5,false,iAngle);
+      delay(1000);
+      StrafeDistance(15,false,iAngle);
+  }
 
   void Localise(){
     // Initialise variables
@@ -935,6 +993,7 @@
     float BL_IR_Data[] = {0,999};
     float BR_IR_Data[] = {0,999};
     float iAngle = 0;
+    iAngle = gyro_read();
     
     FL_IR(FL_IR_Data);
     FR_IR(FR_IR_Data);
@@ -953,13 +1012,13 @@
       BluetoothSerial.println("Facing diagonal corner");
       if (FL_IR_Data[0] > FR_IR_Data[0]) {
         BluetoothSerial.println("Strafing right");
-        StrafeDistance(15,false);
+        StrafeDistance(15,false,iAngle);
         delay(100);
         BluetoothSerial.println("Aligning right");
         AlignToWall(false);
       } else if (FR_IR_Data[0] > FL_IR_Data[0]) {
             BluetoothSerial.println("Strafing left");
-            StrafeDistance(15,true);
+            StrafeDistance(15,true,iAngle);
             delay(100);
             BluetoothSerial.println("Aligning left");
             AlignToWall(true);
@@ -971,10 +1030,10 @@
 
     } else if ((FL_IR_Data[0] < 79) && (FR_IR_Data[0] > 79)) {
       BluetoothSerial.println("Strafing Left 2");
-      StrafeDistance(15,true);
+      StrafeDistance(15,true,iAngle);
     } else if ((FR_IR_Data[0] < 79) && (FL_IR_Data[0] > 79)) {
       BluetoothSerial.println("Strafing right 2");
-      StrafeDistance(15,false);
+      StrafeDistance(15,false,iAngle);
     }
     else {
       BluetoothSerial.println("Random 90 degree CW turn");
@@ -1061,16 +1120,17 @@
 
   // Drive straight and stop a certain distance in cm away from an object detected in front of the robot.
   void SonarDistance(float target, float initialAngle, boolean isMiddle) {
+    
     BluetoothSerial.println((String)"Driving to " + target + (String)"cm");
     // Initialise variables
     float frontL[] = {0,999};
     float frontR[] = {0,999};
+    float sonar[] = {0,999};
 
-    float sonar = 0;
     float u = 0;
-    float uLimit[] = {-250,250}; //Limit maximuim effort signal for sonar.
+    float uLimit[] = {-200,200}; //Limit maximuim effort signal for sonar.
     float sonarError[] = {0,0};
-    float sonarGains[] = {30,0.1,0.001}; // Kp, Ki, and Kd gains for sonar
+    float sonarGains[] = {10,0.05,0.0001}; // Kp, Ki, and Kd gains for sonar
     float sonarIntegral = 0;
     float sonarDerivative = 0;
     
@@ -1081,10 +1141,10 @@
     float gyroGains[] = {15,0.1,0};
     float gyroIntegral = 0;
     float gyroDerivative = 0;
-    
+    float sonarReading = 0;
     //float initialAngle = gyro_read();
     float current_Angle = initialAngle;
-    float integralLimit = uLimit[1]/sonarGains[0]; // Set max error boundary for integral gain to be applied to control system
+    float integralLimit = (uLimit[1]/sonarGains[0])/2; // Set max error boundary for integral gain to be applied to control system
     int timer = 500; // Initialise tolerance timer.
 
 
@@ -1098,8 +1158,9 @@
     do {
       FL_IR(frontL);
       FR_IR(frontR);
-      sonar = HC_SR04_range(); // Determine distance from object using sonar sensors (in cm) and convert to mm.
-      sonarError[1] = sonar - target; // Update the error for distance from target distance.
+      sonarReading = HC_SR04_range(); // Determine distance from object using sonar sensors (in cm) and convert to mm.
+      Kalman(sonarReading,sonar,1);
+      sonarError[1] = sonar[0] - target; // Update the error for distance from target distance.
 
     current_Angle = gyro_read();
       //wrap current angle
@@ -1119,12 +1180,12 @@
       right_rear_motor.writeMicroseconds(1500 + (-u - angleEffort));
       right_font_motor.writeMicroseconds(1500 + (-u - angleEffort));
 
-      x = 200 - (sonar + (24 / 2));
+      x = 200 - (sonar[0] + (24 / 2));
 
-      BluetoothSerial.println((String)"Error: " + sonarError[1] + (String)(" sonar: ") + sonar + (String)", u: " + u + (String)" anglemoved: " + gyroError[1] + (String)" Adjustment: " + angleEffort + (String)" timer: " + timer);
+      BluetoothSerial.println((String)"Error: " + sonarError[1] + (String)(" sonar: ") + sonar[0] + (String)", u: " + u + (String)" anglemoved: " + gyroError[1] + (String)" Adjustment: " + angleEffort + (String)" timer: " + timer);
 
       // Loop exits if error remains in steady state for at least 500ms.
-      if ((abs(sonarDerivative) < 5) && (abs(sonarError[1]) < 0.1 * abs(target))) {
+      if ((abs(sonarDerivative) < 10) && (abs(sonarError[1]) < 2)) {
         timer -= 100;
       }
       else {
@@ -1133,40 +1194,42 @@
       delay(100); // ~10Hz
 
     } while (((sonar != -1)&&(timer > 0)) && (isMiddle||((frontL[0] > 20) && (frontR[0] > 20)))); // Terminate once within desired tolerance.
+    stop();
     BluetoothSerial.println((String)"frontL[0]" + frontL[0]+ (String)"cm" + (String)"frontR[0]" + frontR[0]+ (String)"cm");
-
+    
     if(sonar == -1){
       BluetoothSerial.println("ERROR: INVALID SONAR READING!!!");
     }
+    delay(100);
   }
 
   // Strafe to a specified distance from a wall using average reading from IR sensors.
-  void StrafeDistance(float target, boolean isLeft) {
+  void StrafeDistance(float target, boolean isLeft, float initialAngle) {
     float actualTarget = target - 7;
     BluetoothSerial.println((String)"Strafing to " + actualTarget + (String)"cm");
     // Initialise variables
-    float sonar = 0;
     float u = 0;
     float uLimit[] = {-250,250}; //Limit maximuim effort signal for sonar.
     float irError[] = {0,0};
-    float irGains[] = {30,0.1,0.001}; // Kp, Ki, and Kd gains for sonar
+    float irGains[] = {20,10,0}; // Kp, Ki, and Kd gains for sonar
     float irIntegral = 0;
-    float irDerivative = 0;
+    float irDerivative = 0.2;
     float irFront[] = {0,999};
     float irBack[] ={0,999};
     
     float angle = 0;
     float angleEffort = 0;
-    float angleEffortLimit[] = {-150,150};
+    float angleEffortLimit[] = {0,0};
     float gyroError[] = {0,0}; // [lastError,error] for gyro
-    float gyroGains[] = {15,0.1,0}; // Kp, Ki, and Kd gains for gyro
+    float gyroGains[] = {30,0.5,0.001}; // Kp, Ki, and Kd gains for gyro
     float gyroIntegral = 0;
     float gyroDerivative = 0;
 
     
-    float initialAngle = gyro_read();
+    //float initialAngle = gyro_read();
     float current_Angle = initialAngle;
-    float integralLimit = uLimit[1]/irGains[0]; // Set max error boundary for integral gain to be applied to control system
+    float integralLimit = (uLimit[1]/irGains[0]); // Set max error boundary for integral gain to be applied to control system
+    float gyroIntegralLimit = angleEffortLimit[1]/gyroGains[0]; // Set max error boundary for integral gain to be applied to control system
     int timer = 500; // Initialise tolerance timer.
   
 
@@ -1200,10 +1263,10 @@
       
       gyroError[1] =  current_Angle - initialAngle; // Calculate angle error (relative to starting angle).
       PID_Control(irError, irGains, &irDerivative, &irIntegral, &integralLimit, &u, uLimit); // Calculate control effort for driving straight using PID control.
-      PID_Control(gyroError, gyroGains, &gyroDerivative, &gyroIntegral, &integralLimit, &angleEffort, angleEffortLimit); // Calculate control effort for angle correction using PID control.
+      PID_Control(gyroError, gyroGains, &gyroDerivative, &gyroIntegral, &gyroIntegralLimit, &angleEffort, angleEffortLimit); // Calculate control effort for angle correction using PID control.
 
       // Loop exits if error remains in steady state for at least 500ms.
-      if ((abs(irDerivative) < 5) && abs(irError[1]) < 0.1 * abs(target - 7)) {
+      if ((abs(irDerivative) < 10) && abs(irError[1]) < 0.6) {
         timer -= 100;
       }
       else {
@@ -1230,6 +1293,7 @@
     } while (timer > 0); // Terminate once within desired tolerance.
     BluetoothSerial.println("Strafing Complete");
     stop();
+    delay(100);
   }
 //#pragma endregion end
 
@@ -1241,7 +1305,7 @@
     int signalADC = analogRead(frontR_IR);
     float distance = 15832 * pow(signalADC, -1.21);
     distance = constrain(distance, 1, 80);
-    Kalman(distance, output, 1);
+    Kalman(distance, output, 5);
   }
 
   void FL_IR(float output[])
@@ -1249,7 +1313,7 @@
     int signalADC = analogRead(frontL_IR);
     float distance = 16479 * pow(signalADC, -1.21);
     distance = constrain(distance, 1, 80);
-    Kalman(distance, output, 1);
+    Kalman(distance, output, 5);
 
   }
 
@@ -1258,7 +1322,7 @@
     int signalADC = analogRead(backL_IR);
     float distance = 7279 * pow(signalADC, -1.19);
     distance = constrain(distance, 1, 30);
-    Kalman(distance, output, 1);
+    Kalman(distance, output, 5);
    }
 
   void BR_IR(float output[])
@@ -1266,7 +1330,7 @@
     int signalADC = analogRead(backR_IR);
     float distance = 4921 * pow(signalADC, -1.13);
     distance = constrain(distance, 1, 30);
-    Kalman(distance, output, 1);
+    Kalman(distance, output, 5);
   }
 
   void Kalman(double rawdata, float output[], double sensor_noise) {  // Kalman Filter
