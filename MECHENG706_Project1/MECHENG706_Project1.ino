@@ -1,4 +1,3 @@
-s
 //=============================================================
 //#pragma region 1. SETUP
 //=============================================================
@@ -75,6 +74,9 @@ s
   double last_est_leftIR = 0;
   double last_est_IR1 = 0;
   double last_est_IR2 = 0;
+
+  //Setup for middle strafe
+  float strafeIR=15+8;
 
   //Serial Pointer
   HardwareSerial *SerialCom;
@@ -171,8 +173,11 @@ s
     //    }
     
     
-    Serial.println("Started the course.");
-    MiddleLogic();
+    BluetoothSerial.println("Started the course.");
+    while(1){
+        gyro_strafe(0,true);
+    }
+    //MiddleLogic();
     //MiddleStrafe(1);
     //      while (1) {
     //        
@@ -193,7 +198,13 @@ s
       //TurnByAngle(-90);
       //AlignToWall(true);
       //FindCorner();
+      //BluetoothSerial.println("Driving Forward");
     //SonarDistance(15);
+    //BluetoothSerial.println("STOPPED");
+    delay(1000);
+    //BluetoothSerial.println("Driving Backward");
+    //SonarDistance(170);
+    //BluetoothSerial.println("STOPPED");
     //WallFollow();
     //delay(10000);
 
@@ -291,14 +302,18 @@ s
     bool Forward = 0;
     bool isLeft = 0;
 
+    float init_angle=0;
     x = 85; //TEMP
     y = 15; //TEMP
+
+    y_distance=15+8;
 
     if (((FR_IR_Data[0] + BR_IR_Data[0]) / 2) > ((FL_IR_Data[0] + BL_IR_Data[0]) / 2)) {
         //wall is on the left of the robot
         isLeft = 0;
         BluetoothSerial.println("Wall is on the left!");
         MiddleStrafe(isLeft);
+        
         
         /*
         //OLD CODE (for reference)
@@ -354,6 +369,7 @@ s
         
         //logic to strafe right into the right wall, then wall follow again
     } else {
+        BluetoothSerial.println("Wall is on the right!");
         //wall is on the right of the robot
         isLeft = 1;
 
@@ -363,28 +379,28 @@ s
             SonarDistance(15);
           }
           else {
-            SonarDistance(200 - 15 - (12 / 2)); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
+            SonarDistance(200 - 15 - 24); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
           }
           Forward= ~Forward;
         }
 
-        MiddleStrafe(isLeft);
+        MiddleStrafe(isLeft,init_angle);
         
         //logic to strafe left into the wall, then wall follow again
     }
   }
 
-  void MiddleStrafe(bool Left) {
+  void MiddleStrafe(bool Left, float gyro) {
     int half_second_count = 0;
     float prev_millis = millis();
     int strafe_time = 1; //[seconds]
     
     while (half_second_count < strafe_time * 2) { //need to be tuned
         if (Left) {
-          strafe_left();
+          strafeDistance(120-y_dist,true);
         }
         else {
-          strafe_right();
+          strafeDistance(120-y_dist,false);
         }
         y = y + (half_second_count * (22.5 / (strafe_time * 2)));
         if (millis() - prev_millis > 500) {
@@ -392,6 +408,7 @@ s
           half_second_count++;
          }
         }
+        y_distance=y_distance+22.5;
         stop();
   }
 
@@ -680,21 +697,23 @@ s
   }
 
   // Strafe left at fixed speed value.
-  void strafe_left ()
+  void strafe_left (float u)
   {
-    left_font_motor.writeMicroseconds(1500 - speed_val);
-    left_rear_motor.writeMicroseconds(1500 + speed_val);
-    right_rear_motor.writeMicroseconds(1500 + speed_val);
-    right_font_motor.writeMicroseconds(1500 - speed_val);
+    u=constrain(u,-1*speed_val,speed_val);
+    left_font_motor.writeMicroseconds(1500 - speed_val-u);
+    left_rear_motor.writeMicroseconds(1500 + speed_val+u);
+    right_rear_motor.writeMicroseconds(1500 + speed_val+u);
+    right_font_motor.writeMicroseconds(1500 - speed_val-u);
   }
 
   // Strafe right at fixed speed value.
-  void strafe_right ()
+  void strafe_right (float u)
   {
-    left_font_motor.writeMicroseconds(1500 + speed_val);
-    left_rear_motor.writeMicroseconds(1500 - speed_val);
-    right_rear_motor.writeMicroseconds(1500 - speed_val);
-    right_font_motor.writeMicroseconds(1500 + speed_val);
+    u=constrain(u,-1*speed_val,speed_val);
+    left_font_motor.writeMicroseconds(1500 + speed_val+u);
+    left_rear_motor.writeMicroseconds(1500 - speed_val-u);
+    right_rear_motor.writeMicroseconds(1500 - speed_val-u);
+    right_font_motor.writeMicroseconds(1500 + speed_val+u);
   }
 
   // Pivot counter clockwise at a fixed speed value
@@ -833,7 +852,33 @@ s
     Serial.println((String)("error: ") + angleMoved + (String)", Current angle: " + currentAngle);
 
   }
+  void gyro_strafe(float initialAngle, bool left){
+    float angleMoved,GyroAngle=0;
+    float gyro_error=0;
+     
+     if (initialAngle > 90) {
+       initialAngle = initialAngle-360;
+     }
+     
+     GyroAngle=gyro_read();
 
+     if (GyroAngle> 90) {
+          angleMoved = (360- GyroAngle)-initialAngle;
+        }else{
+            angleMoved= GyroAngle-initialAngle; 
+        }
+        
+    BluetoothSerial.println((String)("initial angle is : ") + initialAngle+(String)("angle reading: ") +  GyroAngle+(String)("error: ") + angleMoved + (String)", adjustment: " + gyro_error);
+    
+    gyro_error=controller(angleMoved, 1, 0.12);
+    
+    if (left){
+      strafe_left(gyro_error);
+    }else{
+      strafe_right(gyro_error);
+    }
+    
+  }
   // PI controller helper function
   float controller(float error, float kp, float ki) {
     float integral, u = 0;
@@ -1063,7 +1108,7 @@ s
 
       x = 200 - (sonar + (24 / 2));
 
-      //BluetoothSerial.println((String)"Error: " + sonarError[1] + (String)(" sonar: ") + sonar + (String)", u: " + u + (String)" anglemoved: " + gyroError[1] + (String)" Adjustment: " + angleEffort + (String)"FrontL: " + frontL[0] + (String)" frontR: " + frontR[0]);
+      BluetoothSerial.println((String)"Error: " + sonarError[1] + (String)(" sonar: ") + sonar + (String)", u: " + u + (String)" anglemoved: " + gyroError[1] + (String)" Adjustment: " + angleEffort + (String)"FrontL: " + frontL[0] + (String)" frontR: " + frontR[0]);
 
       // Loop exits if error remains in steady state for at least 500ms.
       if ((abs(sonarDerivative) < 5) && abs(sonarError[1]) < 0.1 * abs(target)) {
