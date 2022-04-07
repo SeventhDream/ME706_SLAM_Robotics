@@ -1,4 +1,4 @@
-
+s
 //=============================================================
 //#pragma region 1. SETUP
 //=============================================================
@@ -315,7 +315,7 @@
           stop();
           */
 
-        SonarDistance(200 - 15 - 24 ); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
+        SonarDistance(200 - 15 - 24); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
         stop();
         
         /*
@@ -1060,6 +1060,8 @@
       left_rear_motor.writeMicroseconds(1500 + (u - angleEffort));
       right_rear_motor.writeMicroseconds(1500 + (-u - angleEffort));
       right_font_motor.writeMicroseconds(1500 + (-u - angleEffort));
+
+      x = 200 - (sonar + (24 / 2));
 
       //BluetoothSerial.println((String)"Error: " + sonarError[1] + (String)(" sonar: ") + sonar + (String)", u: " + u + (String)" anglemoved: " + gyroError[1] + (String)" Adjustment: " + angleEffort + (String)"FrontL: " + frontL[0] + (String)" frontR: " + frontR[0]);
 
