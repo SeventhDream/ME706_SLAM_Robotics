@@ -37,7 +37,7 @@
   Servo right_rear_motor;  // create servo object to control Vex Motor Controller 29
   Servo right_font_motor;  // create servo object to control Vex Motor Controller 29
   Servo turret_motor;
-  int speed_val = 150;
+  int speed_val = 200;
   int speed_change;
   int pos = 0;
 
@@ -174,11 +174,14 @@
     BluetoothSerial.println("=============================================================");
     BluetoothSerial.println("Started the course.");
         BluetoothSerial.println("=============================================================");
-    AlignToWall(true);
+    //gyro_forward(15,0);
+    //AlignToWall(true);
     //testStrafe();
     //SonarDistance(160,initAngle,true);
+    WallFollow();
     altMiddleLogic();
-    //MiddleStrafe(1);
+    TurnByAngle(180);
+    WallFollow();
     //      while (1) {
     //        
     //StrafeTime(700,true,initAngle);
@@ -298,40 +301,46 @@
     float iAngle = gyro_read();
     
     if (((FR_IR_Data[0] + BR_IR_Data[0]) / 2) > ((FL_IR_Data[0] + BL_IR_Data[0]) / 2)) {
-      StrafeTime(300,false,iAngle);
-     
-      SonarDistance(160,iAngle,true);   
-       StrafeTime(300,false,iAngle);
-      
-      SonarDistance(12.5,iAngle,true);
-       StrafeTime(300,false,iAngle);
-      
-      SonarDistance(160,iAngle,true);
-       StrafeTime(300,false,iAngle);
+      StrafeTime(1000,false,iAngle);
 
+      gyro_forward(-15,iAngle);
+      StrafeTime(1000,false,iAngle);
+
+      gyro_forward(15,iAngle);
+      StrafeTime(1000,false,iAngle);
+      delay(3000);
       
-      SonarDistance(12.5,iAngle,true);
-       StrafeTime(300,false,iAngle);
-      
-       SonarDistance(160,iAngle,true);
-       StrafeTime(300,false,iAngle);
-      
-      SonarDistance(12.5,iAngle,true);
+      gyro_forward(-15,iAngle);
+      StrafeTime(1000,false,iAngle);
+
+      gyro_forward(15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,false,iAngle);
+       
+      gyro_forward(-15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,false,iAngle);
+            //SonarDistance(160,iAngle,true);
       
     }
     else{
-    StrafeTime(300,true,iAngle);
-      SonarDistance(160,iAngle,true);
-       StrafeTime(300,true,iAngle);
-      SonarDistance(12.5,iAngle,true);
-       StrafeTime(300,true,iAngle);
-      SonarDistance(160,iAngle,true);
-       StrafeTime(300,true,iAngle);
-      SonarDistance(12.5,iAngle,true);
-       StrafeTime(300,true,iAngle);
-       SonarDistance(160,iAngle,true);
-       StrafeTime(300,true,iAngle);
-      SonarDistance(12.5,iAngle,true);
+      StrafeTime(1000,true,iAngle);
+      gyro_forward(-15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,true,iAngle);
+      gyro_forward(15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,true,iAngle);
+      gyro_forward(-15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,true,iAngle);
+      gyro_forward(15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,true,iAngle);
+      gyro_forward(-15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,true,iAngle);
+      //SonarDistance(160,iAngle,true);
        
     }
   }
@@ -623,26 +632,13 @@
         //BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_long + (String)" Left Side = " + speed_short);
         while (abs(travel_angle) > 5) {
           BluetoothSerial.println("Gyro forward!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-          gyro_forward(initialAngle);
+          gyro_forward(15,initialAngle);
           travel_angle = gyro_read();
+          break;
         }
 
        }
     }
-
-  void slight_left (float speed_short, float speed_long) {
-    left_font_motor.writeMicroseconds(1500 - (speed_val + speed_short));
-    left_rear_motor.writeMicroseconds(1500 + (speed_val + speed_short));
-    right_rear_motor.writeMicroseconds(1500 - (speed_val - speed_long));
-    right_font_motor.writeMicroseconds(1500 - (speed_val - speed_long));
-  }
-
-  void slight_right (float speed_short, float speed_long) {
-    left_font_motor.writeMicroseconds(1500 + (speed_val + speed_short));
-    left_rear_motor.writeMicroseconds(1500 + (speed_val + speed_short));
-    right_rear_motor.writeMicroseconds(1500 - (speed_val - speed_long));
-    right_font_motor.writeMicroseconds(1500 + (speed_val - speed_long));
-  }
 
   void cw ()
   {
@@ -745,17 +741,31 @@
     right_rear_motor.writeMicroseconds(1500 - speed_val);
     right_font_motor.writeMicroseconds(1500 - speed_val);
   }
+  
   void drive_forward(float adjustment, float correction){
 
       adjustment=constrain(adjustment,-150,150);
       correction=constrain(correction,-150,150);
       BluetoothSerial.println((String)"adjustment is: "+correction);
-
-        left_font_motor.writeMicroseconds(1500 + (speed_val+adjustment+correction));
-        left_rear_motor.writeMicroseconds(1500 + (speed_val+adjustment+correction));
-        right_rear_motor.writeMicroseconds(1500 - (speed_val+adjustment-correction));
-        right_font_motor.writeMicroseconds(1500 - (speed_val+adjustment-correction));
+      
+      left_font_motor.writeMicroseconds(1500 + (speed_val+adjustment-correction));
+      left_rear_motor.writeMicroseconds(1500 + (speed_val+adjustment-correction));
+      right_rear_motor.writeMicroseconds(1500 - (speed_val+adjustment+correction));
+      right_font_motor.writeMicroseconds(1500 - (speed_val+adjustment+correction));
     }
+
+    void drive_backward(float adjustment, float correction){
+
+    adjustment=constrain(adjustment,-150,150);
+    correction=constrain(correction,-150,150);
+    BluetoothSerial.println((String)"adjustment is: "+correction);
+    
+    left_font_motor.writeMicroseconds(1500 - (speed_val+adjustment+correction));
+    left_rear_motor.writeMicroseconds(1500 - (speed_val+adjustment+correction));
+    right_rear_motor.writeMicroseconds(1500 + (speed_val+adjustment-correction));
+    right_font_motor.writeMicroseconds(1500 + (speed_val+adjustment-correction));
+  }
+
 
   //Drive straight until hitting a wall
   void driveToWall()
@@ -854,30 +864,47 @@
     right_rear_motor.writeMicroseconds(1500);
     right_font_motor.writeMicroseconds(1500);
   }
-  void gyro_forward(float initialAngle){
+  void gyro_forward(float target, float initialAngle){
+    //target positive for forward, negative for backward
       float angleMoved,GyroAngle=0;
       float feedback[]={0,500};//controller feedback array, where feedback[0] is u and feedback[1] is timer
+      bool backwards=false;
 
       float ultra = HC_SR04_range();
       //while timer is greater than 0, the error hasn't been settled for more than 5 ms.
 
-      while(feedback[1]>0 || ultra>15){
+      //Wrapping target so positive is forward, negative is backward
+      if (target<0){
+        target=200-24+target;
+        backwards=true;
+      }
+      
+      BluetoothSerial.println((String)"target is"+target+"ultra is"+ultra);
+      while(((ultra>target) && !backwards) || ((ultra<target) && backwards)){
         //wrap initial angle
         if (initialAngle > 90) {
           initialAngle = initialAngle-360;
         }
         GyroAngle=gyro_read();
         if (GyroAngle> 90) {
-          angleMoved = (360- GyroAngle)-initialAngle;
+          angleMoved = (GyroAngle-360)-initialAngle;
         }else{
           angleMoved= GyroAngle-initialAngle; 
         }
         BluetoothSerial.println((String)("initial angle is : ") + initialAngle+(String)("angle reading: ") +  GyroAngle+(String)("error: ") + angleMoved + (String)", adjustment: " + feedback[0]);
 
-        controller(angleMoved, 10, 50, 0, 5,1,feedback);
-        drive_forward(0,feedback[0]);
+        controller(angleMoved, 10, 50, 0, 5,1,feedback);        
+        if (backwards){
+          drive_backward(0,feedback[0]);
+        }else{
+          drive_forward(0,feedback[0]);
+        }
         ultra = HC_SR04_range();
       }
+      
+      stop();
+      delay(1000);//VERY IMPORTANTTT!!! FOR GYRO TO GO STRAIGHT need enough time for the motors to settle down.
+
     }
 
   // PI controller helper function
@@ -1362,8 +1389,6 @@
     
     // PI control loop with additional straighten correction using gyro.
     do {
-    
-      current_Angle = gyro_read();
       //wrap current angle
       if (current_Angle > 90) {
         current_Angle = current_Angle - 360;
@@ -1385,37 +1410,49 @@
       BluetoothSerial.println( (String)" STRAFING initial angle is:" + initialAngle+ "Gyro is: " + current_Angle+(String)" Error: " + gyroError[1] + (String)", angle effort: " + angleEffort + (String)" timer: " + timer);
 
       // Check which sensors to read based on input parameter.
-      if(timeToStrafe > 0){
       if(!isLeft){
-        left_font_motor.writeMicroseconds(1500 + (+ 150 - angleEffort));
-        left_rear_motor.writeMicroseconds(1500 + ( - 150 - angleEffort));
-        right_rear_motor.writeMicroseconds(1500 + ( - 150 - angleEffort));
-        right_font_motor.writeMicroseconds(1500 + (+ 150 - angleEffort));
+        left_font_motor.writeMicroseconds(1500 + (150 - angleEffort));
+        left_rear_motor.writeMicroseconds(1500 - (150 + angleEffort));
+        right_rear_motor.writeMicroseconds(1500 - (150 + angleEffort));
+        right_font_motor.writeMicroseconds(1500 + (150 - angleEffort));
       } else{
-        left_font_motor.writeMicroseconds(1500 + (- 150 - angleEffort));
-        left_rear_motor.writeMicroseconds(1500 + ( + 150 - angleEffort));
-        right_rear_motor.writeMicroseconds(1500 + ( + 150 - angleEffort));
-        right_font_motor.writeMicroseconds(1500 + ( - 150 - angleEffort));
+        left_font_motor.writeMicroseconds(1500 - (150 + angleEffort));
+        left_rear_motor.writeMicroseconds(1500 + (150 - angleEffort));
+        right_rear_motor.writeMicroseconds(1500 + ( 150 - angleEffort));
+        right_font_motor.writeMicroseconds(1500 - ( 150 + angleEffort));
       }
-    }else{
-      if(!isLeft){
-        left_font_motor.writeMicroseconds(1500 + (+ 0 - angleEffort*10));
-        left_rear_motor.writeMicroseconds(1500 + ( - 0 - angleEffort*10));
-        right_rear_motor.writeMicroseconds(1500 + ( - 0 - angleEffort*10));
-        right_font_motor.writeMicroseconds(1500 + (+ 0 - angleEffort*10));
-      } else{
-        left_font_motor.writeMicroseconds(1500 + (- 0 - angleEffort));
-        left_rear_motor.writeMicroseconds(1500 + ( + 0 - angleEffort));
-        right_rear_motor.writeMicroseconds(1500 + ( + 0 - angleEffort));
-        right_font_motor.writeMicroseconds(1500 + ( - 0 - angleEffort));
-      }
-      }
-
       delay(100); // ~10Hz
-    } while (timer > 0); // Terminate once within desired tolerance.
+    } while (timeToStrafe> 0); // Terminate once within desired tolerance.
+
+    // This corrects angle if the motor stops running 
+    while(timer>0){
+      gyroError[1] =  current_Angle - initialAngle; // Calculate angle error (relative to starting angle).
+      
+      PID_Control(gyroError, gyroGains, &gyroDerivative, &gyroIntegral, &gyroIntegralLimit, &angleEffort, angleEffortLimit); // Calculate control effort for angle correction using PID control.
+
+      timeToStrafe = timeToStrafe -100;
+
+      if(abs(gyroError[1]) < 1){
+        timer = timer - 100;
+      }else{
+        timer = 300;
+      }
+      
+     if(!isLeft){
+        left_font_motor.writeMicroseconds(1500 + (0 + angleEffort*10));
+        left_rear_motor.writeMicroseconds(1500 - (0 - angleEffort*10));
+        right_rear_motor.writeMicroseconds(1500 - (0 - angleEffort*10));
+        right_font_motor.writeMicroseconds(1500 + (0 + angleEffort*10));
+      } else{
+        left_font_motor.writeMicroseconds(1500 - ( 0 - angleEffort*10));
+        left_rear_motor.writeMicroseconds(1500 + ( 0 + angleEffort*10));
+        right_rear_motor.writeMicroseconds(1500 + (0 + angleEffort*10));
+        right_font_motor.writeMicroseconds(1500 - ( 0 - angleEffort*10));
+      }
+    }
     BluetoothSerial.println("Strafing Complete");
     stop();
-    delay(100);
+    delay(1000);//VERY IMPORTANTTT!!! FOR GYRO TO GO STRAIGHT need enough time for the motors to settle down.
   }
 //#pragma endregion end
 
