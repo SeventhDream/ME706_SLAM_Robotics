@@ -303,6 +303,8 @@
       y = 120 - 7 - FL_IR_Data[0];
     }
   }
+
+  //print to textfile/serial output here
   }
 //#pragma endregion end
 
