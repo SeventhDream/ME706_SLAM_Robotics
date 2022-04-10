@@ -83,6 +83,7 @@
   float x = 0;
   float y = 0;
   bool start_printing = 0; //set to 1 right before the first wall follow begins
+  bool global_isLeft = 0; // = 1 if the wall is on the left when the robot is in starting corner (needs to be implemented at the end of FindCorner())
 
   void setup(void)
   {
@@ -282,6 +283,27 @@
     BluetoothSerial.print(y);
   }
 
+  void CoordUpdate() {
+  float FR_IR_Data[] = {0, 999};
+  float FL_IR_Data[] = {0, 999};
+  FR_IR(FR_IR_Data); // Front right IR sensor reading
+  FL_IR(FL_IR_Data); // Front left IR sensor reading
+  //!isLeft means the wallstartedon the left
+  x = 200 - (HC_SR04_range() + (24 / 2)); // 12 / 2 is distance between sonar and middle of robot (**TUNING NEEDED**)
+
+  if (!global_isLeft) {
+    if (FR_IR_Data[0] == 80) {
+      y = y + 7 + FL_IR_Data[0];
+    }
+    y = 120 - 7 - FR_IR_Data[0];
+  } else {
+    if (FL_IR_Data[0] == 80) {
+      y = y + 7 + FR_IR_Data[0];
+    } else {
+      y = 120 - 7 - FL_IR_Data[0];
+    }
+  }
+  }
 //#pragma endregion end
 
 //=============================================================
@@ -540,6 +562,8 @@
       }
     }
     BluetoothSerial.println("Ready to START MAPPING!");
+    start_printing = 1; // added by Lara to start mapping
+    
   }
   void WallFollow() {
       float ultra = HC_SR04_range();
@@ -559,6 +583,8 @@
       float long_feedback[]={0,500};
       float short_feedback[]={0,500};
       float gyro_feedback[]={0,500};
+
+      float prev_millis = millis(); //for printing at 2Hz
 
       // Determining if the wall is on the left or right
       //Serial.println((String)"Initial IR distances are: " + (String)" IR Long Right = " + FR_IR_Data[0] + (String)" IR Long Left = " + FL_IR_Data[0] + (String)" IR Short Right = " + BR_IR_Data[0] + (String) " IR Short Left = " + );
@@ -588,12 +614,14 @@
         if ((FR_IR_Data[0] - target) < (FL_IR_Data[0] - target)) { //indicates whether the wall is on left side or right side
           //Serial.println("Wall is on the right!");
           left = 0;
+          global_isLeft = 0;
           long_IR = FR_IR_Data[0];
           short_IR = BR_IR_Data[0];
         }
         else {
           //Serial.println("Wall is on the left!");
           left = 1;
+          global_isLeft = 1;
           long_IR = FL_IR_Data[0];
           short_IR = BL_IR_Data[0];
         }
@@ -635,6 +663,11 @@
           gyro_forward(15,initialAngle);
           travel_angle = gyro_read();
           break;
+        }
+
+        if (millis() - prev_millis > 450) {
+          CoordUpdate();
+          prev_millis = millis();
         }
 
        }
@@ -873,6 +906,8 @@
       float ultra = HC_SR04_range();
       //while timer is greater than 0, the error hasn't been settled for more than 5 ms.
 
+      float prev_millis = millis();
+
       //Wrapping target so positive is forward, negative is backward
       if (target<0){
         target=200-24+target;
@@ -900,6 +935,12 @@
           drive_forward(0,feedback[0]);
         }
         ultra = HC_SR04_range();
+
+        if (millis() - prev_millis > 450) {
+          CoordUpdate();
+          prev_millis = millis();
+        }
+        
       }
       
       stop();
@@ -1375,6 +1416,8 @@
     //float integralLimit = (uLimit[1]/irGains[0])/2; // Set max error boundary for integral gain to be applied to control system
     float gyroIntegralLimit = angleEffortLimit[1]/gyroGains[0]; // Set max error boundary for integral gain to be applied to control system
     int timer = 300; // Initialise tolerance timer.
+
+    float prev_millis = millis(); //for coords
   
 
     //Wrap initial angle
@@ -1421,6 +1464,12 @@
         right_rear_motor.writeMicroseconds(1500 + ( 150 - angleEffort));
         right_font_motor.writeMicroseconds(1500 - ( 150 + angleEffort));
       }
+      
+      if (millis() - prev_millis > 450) {
+        CoordUpdate();
+        prev_millis = millis();
+      }
+      
       delay(100); // ~10Hz
     } while (timeToStrafe> 0); // Terminate once within desired tolerance.
 
