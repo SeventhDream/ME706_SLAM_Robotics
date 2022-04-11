@@ -257,20 +257,27 @@ void ISR1() {
   FL_IR(FL_IR_Data); // Front left IR sensor reading
   //!isLeft means the wallstartedon the left
   x = 200 - (HC_SR04_range() + (24 / 2)); // 12 / 2 is distance between sonar and middle of robot (**TUNING NEEDED**)
-
+  BluetoothSerial.println((String)"IR right is:"+FR_IR_Data[0]+(String)"IR left is:"+FL_IR_Data[0]);
   if (!global_isLeft) {
-    if (FR_IR_Data[0] == 80) {
-      y = y + 7 + FL_IR_Data[0];
-    }
-    y = 120 - 7 - FR_IR_Data[0];
-  } else {
-    if (FL_IR_Data[0] == 80) {
-      y = y + 7 + FR_IR_Data[0];
+    if (FR_IR_Data[0] > 79) {
+      y = 120 - (7 + FL_IR_Data[0]);
     } else {
-      y = 120 - 7 - FL_IR_Data[0];
+      y = 7 + FR_IR_Data[0];
     }
+  } 
+  else {
+    if (FL_IR_Data[0] > 79) {
+      y = 120 - (7 + FR_IR_Data[0]);
+    } else {
+      y = 7 + FL_IR_Data[0];
+    }
+    
   }
-
+  BluetoothSerial.println("COORDINATES UPDATING!");
+  BluetoothSerial.print("(x, y) = ");
+    BluetoothSerial.print(x);
+    BluetoothSerial.print(", ");
+    BluetoothSerial.println(y);
   //print to textfile/serial output here
   }
 //#pragma endregion end
@@ -296,6 +303,105 @@ void altMiddleLogic() {
 
     gyro_forward(-15, iAngle);
     StrafeTime(1000, false, iAngle);
+      gyro_forward(15,iAngle);
+      StrafeTime(1000,false,iAngle);
+      //delay(3000);
+      
+      gyro_forward(-15,iAngle);
+      StrafeTime(1000,false,iAngle);
+
+      gyro_forward(15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,false,iAngle);
+       
+      gyro_forward(-15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,false,iAngle);
+            //SonarDistance(160,iAngle,true);
+      
+    }
+    else{
+      StrafeTime(1000,true,iAngle);
+      gyro_forward(-15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,true,iAngle);
+      gyro_forward(15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,true,iAngle);
+      gyro_forward(-15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,true,iAngle);
+      gyro_forward(15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,true,iAngle);
+      gyro_forward(-15,iAngle);
+      //SonarDistance(160,iAngle,true);
+      StrafeTime(1000,true,iAngle);
+      //SonarDistance(160,iAngle,true);
+       
+    }
+  }
+  void MiddleLogic() {
+    
+    //Reading sensor values
+    float FR_IR_Data[] = {0,999};
+    FR_IR(FR_IR_Data);
+    float FL_IR_Data[] = {0,999};
+    FL_IR(FL_IR_Data);
+    float BR_IR_Data[] = {0,999};
+    BR_IR(BR_IR_Data);
+    float BL_IR_Data[] = {0,999};
+    BL_IR(BL_IR_Data);
+    
+    unsigned long prev_millis = millis();
+    float half_second_count = 0;
+    float strafe_time = 1; ///**NEED TO TUNE
+    bool Forward = 0;
+    bool isLeft = 0;
+    float iAngle = gyro_read();
+    float init_angle=0;
+    x = 85; //TEMP
+    y = 15; //TEMP
+
+    y_distance=15+8;
+
+    if (((FR_IR_Data[0] + BR_IR_Data[0]) / 2) > ((FL_IR_Data[0] + BL_IR_Data[0]) / 2)) {
+        //wall is on the left of the robot
+        isLeft = 0;
+        BluetoothSerial.println("Wall is on the left!");
+        MiddleStrafe(isLeft,iAngle);
+        
+        
+        /*
+        //OLD CODE (for reference)
+        while (half_second_count < strafe_time * 2) {//need to be tuned
+          strafe_right();
+          prev_millis = millis();
+          y = y + (half_second_count * (22.5 / (strafe_time * 2)));
+          if (millis() - prev_millis > 500){
+            prev_millis = millis();
+            half_second_count++;
+          }
+          }
+          half_second_count = 0;
+          stop();
+          */
+
+        SonarDistance(200 - 15 - 24,iAngle, true); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
+        stop();
+        
+        /*
+        //OLD CODE (for reference)
+        ultra = HC_SR04_range();
+        while (ultra < (200 - 15 - 13)) { //calibrate later
+        if (millis() - prev_millis > 500){
+          prev_millis = millis();
+          }
+      }
+      stop();*/
+        
+        
+        MiddleStrafe(isLeft,iAngle);
 
     gyro_forward(15, iAngle);
     StrafeTime(1000, false, iAngle);
@@ -531,7 +637,7 @@ void MiddleLogic() {
           break;
         }
 
-        if (millis() - prev_millis > 450) {
+        if (millis() - prev_millis > 400) {
           CoordUpdate();
           prev_millis = millis();
         }
@@ -1061,7 +1167,7 @@ void controller(float error, float kp, float ki, float kd, float integral_limit,
         backwards=true;
       }
       
-      BluetoothSerial.println((String)"target is"+target+"ultra is"+ultra);
+      BluetoothSerial.println((String)"gyro_forward() target is "+target+" ultra is "+ultra);
       while(((ultra>target) && !backwards) || ((ultra<target) && backwards)){
         //wrap initial angle
         if (initialAngle > 90) {
@@ -1073,7 +1179,7 @@ void controller(float error, float kp, float ki, float kd, float integral_limit,
         }else{
           angleMoved= GyroAngle-initialAngle; 
         }
-        BluetoothSerial.println((String)("initial angle is : ") + initialAngle+(String)("angle reading: ") +  GyroAngle+(String)("error: ") + angleMoved + (String)", adjustment: " + feedback[0]);
+        //BluetoothSerial.println((String)("initial angle is : ") + initialAngle+(String)("angle reading: ") +  GyroAngle+(String)("error: ") + angleMoved + (String)", adjustment: " + feedback[0]);
 
         controller(angleMoved, 10, 50, 0, 5,1,feedback);        
         if (backwards){
@@ -1082,6 +1188,15 @@ void controller(float error, float kp, float ki, float kd, float integral_limit,
           drive_forward(0,feedback[0]);
         }
         ultra = HC_SR04_range();
+
+//        int wait = 1000;
+//        int wait_millis = millis();
+//        while (millis() - wait_millis < 1000) {
+//          if (millis() - prev_millis > 450) {
+//            CoordUpdate();
+//            prev_millis = millis();
+//          }
+//        }
 
         if (millis() - prev_millis > 450) {
           CoordUpdate();
@@ -1603,6 +1718,35 @@ void StrafeTime(float timeToStrafe, boolean isLeft, float initialAngle) {
     gyroError[1] =  current_Angle - initialAngle; // Calculate angle error (relative to starting angle).
 
     PID_Control(gyroError, gyroGains, &gyroDerivative, &gyroIntegral, &gyroIntegralLimit, &angleEffort, angleEffortLimit); // Calculate control effort for angle correction using PID control.
+      if(abs(gyroError[1]) < 1){
+        timer = timer - 100;
+      }else{
+        timer = 300;
+      }
+      
+      //+VE IS CW
+      //BluetoothSerial.println( (String)" STRAFING initial angle is:" + initialAngle+ "Gyro is: " + current_Angle+(String)" Error: " + gyroError[1] + (String)", angle effort: " + angleEffort + (String)" timer: " + timer);
+
+      // Check which sensors to read based on input parameter.
+      if(!isLeft){
+        left_font_motor.writeMicroseconds(1500 + (150 - angleEffort));
+        left_rear_motor.writeMicroseconds(1500 - (150 + angleEffort));
+        right_rear_motor.writeMicroseconds(1500 - (150 + angleEffort));
+        right_font_motor.writeMicroseconds(1500 + (150 - angleEffort));
+      } else{
+        left_font_motor.writeMicroseconds(1500 - (150 + angleEffort));
+        left_rear_motor.writeMicroseconds(1500 + (150 - angleEffort));
+        right_rear_motor.writeMicroseconds(1500 + ( 150 - angleEffort));
+        right_font_motor.writeMicroseconds(1500 - ( 150 + angleEffort));
+      }
+      
+      if (millis() - prev_millis > 400) {
+        CoordUpdate();
+        prev_millis = millis();
+      }
+      
+      delay(100); // ~10Hz
+    } while (timeToStrafe> 0); // Terminate once within desired tolerance.
 
     timeToStrafe = timeToStrafe - 100;
 
@@ -1623,6 +1767,9 @@ void StrafeTime(float timeToStrafe, boolean isLeft, float initialAngle) {
       right_rear_motor.writeMicroseconds(1500 + (0 + angleEffort * 10));
       right_font_motor.writeMicroseconds(1500 - ( 0 - angleEffort * 10));
     }
+    //BluetoothSerial.println("Strafing Complete");
+    stop();
+    delay(1000);//VERY IMPORTANTTT!!! FOR GYRO TO GO STRAIGHT need enough time for the motors to settle down.
   }
   BluetoothSerial.println("Strafing Complete");
   stop();
