@@ -561,7 +561,7 @@ void WallFollow() {
   float initialAngle = 0;
   float angleMoved, GyroAngle = 0;
   
-  float error_long, error_short, long_IR, short_IR, left, integral_long, integral_short, travel_angle, speed_long, speed_short, u_long, u_short = 0;
+  float error_long, error_short, long_IR, short_IR, left, integral_long, integral_short, travel_angle, speed_long, speed_short,speed_gyro, u_long, u_short = 0;
   float target = 7;
   float strafe_thresh = 10; //if teh robot is more than 10cm away from the target distance, robot will strafe.
 
@@ -636,30 +636,31 @@ void WallFollow() {
   //      StrafeDistance(abs(error_long + error_short) / 2, false, initialAngle);
   //    }
 
-    controller(error_long, 5.5, 0.9, 0.05, 1, 0.5, long_feedback);
-    controller(error_short, 5.5, 0.9, 0.05, 1, 0.5, short_feedback);
-    controller(angleMoved,10,0.015,0.005,1,1,feedback);
+    controller(error_long, 4, 0.1, 0.05, 1, 0.5, long_feedback);
+    controller(error_short, 4, 0.1, 0.05, 1, 0.5, short_feedback);
+    controller(angleMoved,10,0.015,0.005,1,1,gyro_feedback);
 
     speed_long = constrain(long_feedback[0], -500, 500);
     speed_short = constrain(short_feedback[0], -500, 500);
-
+    speed_gyro=constrain(gyro_feedback[0],-500,500);
+    
     //BluetoothSerial.println((String)" long IR timer is " + long_feedback[0] + (String)" Short IR timer is" + short_feedback[1]);
     //BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_long + (String)" Left Side = " + speed_short);
     //If errors are small enough fluctuating between positive and negative, make the right and left motors same power
     if( abs(error_long)<0.4 && abs(error_short)<0.4){
-      drive_forward(0,0,gyro_feedback);
+      drive_forward(0,0,speed_gyro);
     }else if (left==1 && short_IR>long_IR){//Top left
       BluetoothSerial.println("top left");
-      drive_forward(abs(long_feedback[0]),short_feedback[0],0);
+      drive_forward(abs(speed_long),speed_short,0);
     }else if (left==1 && short_IR<long_IR){//bottom left
       BluetoothSerial.println("bottom left");
-      drive_forward(long_feedback[0],abs(short_feedback[0]),0);
+      drive_forward(speed_long,abs(speed_short),0);
     }else if(left==-1 && short_IR>long_IR){//top right
       BluetoothSerial.println("top right");
-      drive_forward(short_feedback[0],abs(long_feedback[0]),0);
+      drive_forward(speed_short,abs(speed_long),0);
     }else{//bottom right
        BluetoothSerial.println("bottom right");
-      drive_forward(abs(short_feedback[0]),long_feedback[0],0);
+      drive_forward(abs(speed_short),speed_long,0);
     }
   }
 }
@@ -922,7 +923,7 @@ void controller(float error, float kp, float ki, float kd, float integral_limit,
   integral = integral + error * 0.01;
 
   //to prevent integral windup
-  if (error > integral_limit) {
+  if (abs(error) > integral_limit) {
     integral = 0;
   }
 
@@ -978,9 +979,9 @@ void gyro_forward(float target, float initialAngle){
 
         //Choose controller settings for either forward or backward
         if (backwards){
-          controller(angleMoved,10,0.005,0.005,1,1,feedback);
+          controller(angleMoved,10,7,0.005,1,1,feedback);
         }else{
-          controller(angleMoved,10,0.015,0.005,1,1,feedback);
+          controller(angleMoved,10,1,0.005,1,1,feedback);
         }
 
         //To account for fluctuations in gyroscope. If the change in error is small, make error 0.
