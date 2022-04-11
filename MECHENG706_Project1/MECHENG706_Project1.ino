@@ -747,14 +747,14 @@
       adjustment=constrain(adjustment,-150,150);
       correction=constrain(correction,-150,150);
       BluetoothSerial.println((String)"adjustment is: "+correction);
-      
-      left_font_motor.writeMicroseconds(1500 + (speed_val+adjustment-correction));
-      left_rear_motor.writeMicroseconds(1500 + (speed_val+adjustment-correction));
-      right_rear_motor.writeMicroseconds(1500 - (speed_val+adjustment+correction));
-      right_font_motor.writeMicroseconds(1500 - (speed_val+adjustment+correction));
-    }
 
-    void drive_backward(float adjustment, float correction){
+      left_font_motor.writeMicroseconds(1500 + (speed_val+adjustment+correction));
+      left_rear_motor.writeMicroseconds(1500 + (speed_val+adjustment+correction));
+      right_rear_motor.writeMicroseconds(1500 - (speed_val+adjustment-correction));
+      right_font_motor.writeMicroseconds(1500 - (speed_val+adjustment-correction));
+  }
+
+ void drive_backward(float adjustment, float correction){
 
     adjustment=constrain(adjustment,-150,150);
     correction=constrain(correction,-150,150);
