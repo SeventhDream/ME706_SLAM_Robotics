@@ -167,21 +167,17 @@ STATE running() {
   //  BluetoothSerial.println((String)"FrontL: " + frontL[0] + " FrontR: " + frontR[0] + " BackL: " + backL[0]+ " backR: " + backR[0]);
 
 
-  Serial.println("=============================================================");
-  Serial.println("Started the course.");
-  Serial.println("=============================================================");
-
   BluetoothSerial.println("=============================================================");
   BluetoothSerial.println("Started the course.");
   BluetoothSerial.println("=============================================================");
-  while (1){
-    gyro_forward(-15,initAngle);
-  }
+//  while (1){
+//    gyro_forward(-15,initAngle);
+//  }
 //  while(1){
 //    gyro_read();
 //  }
  //FindCorner();
- //WallFollow();
+ WallFollow();
  //altMiddleLogic();
  //WallFollow();
  //AlignToWall(true);
@@ -642,7 +638,7 @@ void WallFollow() {
 
     controller(error_long, 5.5, 0.9, 0.05, 1, 0.5, long_feedback);
     controller(error_short, 5.5, 0.9, 0.05, 1, 0.5, short_feedback);
-    controller(angleMoved, 5, 50, 0, 5, 1, gyro_feedback);
+    controller(angleMoved,10,0.015,0.005,1,1,feedback);
 
     speed_long = constrain(long_feedback[0], -500, 500);
     speed_short = constrain(short_feedback[0], -500, 500);
@@ -651,7 +647,7 @@ void WallFollow() {
     //BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_long + (String)" Left Side = " + speed_short);
     //If errors are small enough fluctuating between positive and negative, make the right and left motors same power
     if( abs(error_long)<0.4 && abs(error_short)<0.4){
-      drive_forward(0,0,0);
+      drive_forward(0,0,gyro_feedback);
     }else if (left==1 && short_IR>long_IR){//Top left
       BluetoothSerial.println("top left");
       drive_forward(abs(long_feedback[0]),short_feedback[0],0);
@@ -979,14 +975,12 @@ void gyro_forward(float target, float initialAngle){
           angleMoved= GyroAngle-initialAngle; 
         }
         
-        BluetoothSerial.println((String)("initial angle is : ") + initialAngle+(String)("angle reading: ") +  GyroAngle+(String)("error: ") + angleMoved + (String)", adjustment: " + feedback[0]);
-
 
         //Choose controller settings for either forward or backward
         if (backwards){
-          controller(angleMoved,10,0.5,0.005,1.6,1,feedback);
+          controller(angleMoved,10,0.005,0.005,1,1,feedback);
         }else{
-          controller(angleMoved,10,0.02,0.005,1.6,1,feedback);
+          controller(angleMoved,10,0.015,0.005,1,1,feedback);
         }
 
         //To account for fluctuations in gyroscope. If the change in error is small, make error 0.
@@ -996,7 +990,7 @@ void gyro_forward(float target, float initialAngle){
           motorval=feedback[0];
         }
         
-        Serial.println((String)("initial angle is : ") + initialAngle+(String)("angle reading: ") +  GyroAngle+(String)("error: ") + angleMoved + (String)", adjustment: " + motorval);
+        BluetoothSerial.println((String)("initial angle is : ") + initialAngle+(String)("angle reading: ") +  GyroAngle+(String)("error: ") + angleMoved + (String)", adjustment: " + motorval);
 
         if (backwards){
           drive_backward(0,motorval);
