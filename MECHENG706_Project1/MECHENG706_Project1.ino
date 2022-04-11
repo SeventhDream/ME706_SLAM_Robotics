@@ -167,11 +167,15 @@ STATE running() {
   //  BluetoothSerial.println((String)"FrontL: " + frontL[0] + " FrontR: " + frontR[0] + " BackL: " + backL[0]+ " backR: " + backR[0]);
 
 
+  Serial.println("=============================================================");
+  Serial.println("Started the course.");
+  Serial.println("=============================================================");
+
   BluetoothSerial.println("=============================================================");
   BluetoothSerial.println("Started the course.");
   BluetoothSerial.println("=============================================================");
   while (1){
-    gyro_forward(15,0);
+    gyro_forward(-15,initAngle);
   }
 //  while(1){
 //    gyro_read();
@@ -945,8 +949,9 @@ void controller(float error, float kp, float ki, float kd, float integral_limit,
 }
 
 void gyro_forward(float target, float initialAngle){
-    //target positive for forward, negative for backward
-      float angleMoved,GyroAngle=0;
+//target positive for forward, negative for backward
+
+      float angleMoved,GyroAngle,motorval=0;
       float feedback[]={0,500};//controller feedback array, where feedback[0] is u and feedback[1] is timer
       bool backwards = false;
 
@@ -973,20 +978,30 @@ void gyro_forward(float target, float initialAngle){
         }else{
           angleMoved= GyroAngle-initialAngle; 
         }
+        
         BluetoothSerial.println((String)("initial angle is : ") + initialAngle+(String)("angle reading: ") +  GyroAngle+(String)("error: ") + angleMoved + (String)", adjustment: " + feedback[0]);
 
-        //controller(angleMoved, 10, 50, 0, 5,1,feedback);        
-        controller(angleMoved,24,2,0.005,10,1,feedback);
 
-//        //To account for fluctuations in gyroscope. If the change in error is small, make error 0.
-//        if (abs(angleMoved)<1){
-//          feedback[0]=0;
-//        }
+        //Choose controller settings for either forward or backward
+        if (backwards){
+          controller(angleMoved,10,0.5,0.005,1.6,1,feedback);
+        }else{
+          controller(angleMoved,10,0.02,0.005,1.6,1,feedback);
+        }
+
+        //To account for fluctuations in gyroscope. If the change in error is small, make error 0.
+        if (abs(angleMoved)<0.5){
+          motorval=0;
+        }else{
+          motorval=feedback[0];
+        }
+        
+        Serial.println((String)("initial angle is : ") + initialAngle+(String)("angle reading: ") +  GyroAngle+(String)("error: ") + angleMoved + (String)", adjustment: " + motorval);
 
         if (backwards){
-          drive_backward(0,feedback[0]);
+          drive_backward(0,motorval);
         }else{
-          drive_forward(0,0,feedback[0]);
+          drive_forward(0,0,motorval);
         }
 
 
