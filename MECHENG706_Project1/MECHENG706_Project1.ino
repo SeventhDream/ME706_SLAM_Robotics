@@ -83,6 +83,7 @@ HardwareSerial *SerialCom;
 float x = 0;
 float y = 0;
 bool start_printing = 0; //set to 1 right before the first wall follow begins
+bool global_isLeft = 0; // = 1 if the wall is on the left when the robot is in starting corner (needs to be implemented at the end of FindCorner())
 
 void setup(void)
 {
@@ -229,6 +230,7 @@ STATE stopped() {
   }
   return STOPPED;
 }
+
 //#pragma endregion end
 
 //=============================================================
@@ -250,7 +252,7 @@ void ISR1() {
   BluetoothSerial.print(y);
 }
 
-  void CoordUpdate() {
+void CoordUpdate() {
   float FR_IR_Data[] = {0, 999};
   float FL_IR_Data[] = {0, 999};
   FR_IR(FR_IR_Data); // Front right IR sensor reading
@@ -441,209 +443,39 @@ void altMiddleLogic() {
 
   }
 }
-void MiddleLogic() {
 
-  //Reading sensor values
-  float FR_IR_Data[] = {0, 999};
-  FR_IR(FR_IR_Data);
-  float FL_IR_Data[] = {0, 999};
-  FL_IR(FL_IR_Data);
-  float BR_IR_Data[] = {0, 999};
-  BR_IR(BR_IR_Data);
-  float BL_IR_Data[] = {0, 999};
-  BL_IR(BL_IR_Data);
-
-  unsigned long prev_millis = millis();
-  float half_second_count = 0;
-  float strafe_time = 1; ///**NEED TO TUNE
-  bool Forward = 0;
-  bool isLeft = 0;
-  float iAngle = gyro_read();
-  float init_angle = 0;
-  x = 85; //TEMP
-  y = 15; //TEMP
-
-  y_distance = 15 + 8;
-
-  if (((FR_IR_Data[0] + BR_IR_Data[0]) / 2) > ((FL_IR_Data[0] + BL_IR_Data[0]) / 2)) {
-    //wall is on the left of the robot
-    isLeft = 0;
-    BluetoothSerial.println("Wall is on the left!");
-    MiddleStrafe(isLeft, iAngle);
-
-
-    /*
-      //OLD CODE (for reference)
-      while (half_second_count < strafe_time * 2) {//need to be tuned
-      strafe_right();
-      prev_millis = millis();
-      y = y + (half_second_count * (22.5 / (strafe_time * 2)));
-      if (millis() - prev_millis > 500){
-        prev_millis = millis();
-        half_second_count++;
-      }
-      }
-      half_second_count = 0;
-      stop();
-    */
-
-    SonarDistance(200 - 15 - 24, iAngle, true); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
-    stop();
-
-    /*
-      //OLD CODE (for reference)
-      ultra = HC_SR04_range();
-      while (ultra < (200 - 15 - 13)) { //calibrate later
-      if (millis() - prev_millis > 500){
-      prev_millis = millis();
-      }
-      }
-      stop();*/
-
-
-    MiddleStrafe(isLeft, iAngle);
-
-    SonarDistance(15, iAngle, true);
-    stop();
-    /*
-      //OLD CODE (for reference)
-      ultra = HC_SR04_range();
-      while (ultra > 15) {
-      initAngle = gyro_read();
-      forward(initAngle);
-      if (millis() - prev_millis > 500){
-        prev_millis = millis();
+void MiddleStrafe(bool Left, float iAngle) {
+    int half_second_count = 0;
+    float prev_millis = millis();
+    int strafe_time = 1; //[seconds]
+    //while (half_second_count < strafe_time * 2) { //need to be tuned
+        if (Left) {
+              BluetoothSerial.println("Strafing Using Right Sesnors");
+              if (y_distance < 60){
+               StrafeDistance(y_distance,false,iAngle);
+              } else{
+          StrafeDistance(y_distance,true,iAngle);
         }
-      }
-      stop();*/
-
-    MiddleStrafe(isLeft, iAngle);
-
-    SonarDistance(200 - 15 - 24, iAngle, true); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
-
-    MiddleStrafe(isLeft, iAngle);
-    stop();
-
-    //logic to strafe right into the right wall, then wall follow again
-  } else {
-    BluetoothSerial.println("Wall is on the right!");
-    //wall is on the right of the robot
-    isLeft = 1;
-
-    for (int i = 0; i < 3; i++) {
-      MiddleStrafe(isLeft, iAngle);
-      if (Forward) {
-        SonarDistance(15, iAngle, true);
-      }
-      else {
-        SonarDistance(200 - 15 - 24, iAngle, true); //12 / 2 should be dist from mid of robot to sonar **NEED TO TUNE**
-      }
-      Forward = ~Forward;
-    }
-    BluetoothSerial.println("Ready to START MAPPING!");
-    start_printing = 1; // added by Lara to start mapping
-    
-  }
-}
-  void WallFollow() {
-      float ultra = HC_SR04_range();
- 	    float initialAngle = 0;
-      float angleMoved,GyroAngle=0;
-
-      float error_long, error_short, long_IR, short_IR, left, integral_long, integral_short, travel_angle, speed_long, speed_short, u_long, u_short = 0;
-      float target = 8;
-      float strafe_thresh=10; //if teh robot is more than 10cm away from the target distance, robot will strafe.
-
-      float FR_IR_Data[]={0,999};
-      float FL_IR_Data[]={0,999};
-      float BL_IR_Data[]={0,999};
-      float BR_IR_Data[]={0,999};
-
-      //controller arrays
-      float long_feedback[]={0,500};
-      float short_feedback[]={0,500};
-      float gyro_feedback[]={0,500};
-
-      float prev_millis = millis(); //for printing at 2Hz
-
-      // Determining if the wall is on the left or right
-      //Serial.println((String)"Initial IR distances are: " + (String)" IR Long Right = " + FR_IR_Data[0] + (String)" IR Long Left = " + FL_IR_Data[0] + (String)" IR Short Right = " + BR_IR_Data[0] + (String) " IR Short Left = " + );
-       // Closed loop controls
-      // While long and short timers have not settled at same error for more than 500ms and ultra is more than 15cm away.
-      while (long_feedback[1] > 0 && short_feedback[1]>0 && ultra > 15) {
-        //Rereading sensor values
-        FR_IR(FR_IR_Data);
-        FL_IR(FL_IR_Data);
-        BR_IR(BR_IR_Data);
-        BL_IR(BL_IR_Data);
-        ultra = HC_SR04_range();
-        travel_angle = gyro_read();
-
-        //wrap travel angle
-        if(travel_angle>90){
-          travel_angle=travel_angle-360;
-        }
-        if ((FR_IR_Data[0] - target) < (FL_IR_Data[0] - target)) { //indicates whether the wall is on left side or right side
-          //Serial.println("Wall is on the right!");
-          left = 0;
-          global_isLeft = 0;
-          long_IR = FR_IR_Data[0];
-          short_IR = BR_IR_Data[0];
         }
         else {
-          //Serial.println("Wall is on the left!");
-          left = 1;
-          global_isLeft = 1;
-          long_IR = FL_IR_Data[0];
-          short_IR = BL_IR_Data[0];
+          BluetoothSerial.println("Strafing Using Right Sesnors");
+         if (y_distance < 60){
+               StrafeDistance(y_distance,true,iAngle);
+              }
+              else{
+          StrafeDistance(y_distance,false,iAngle);
         }
-        //Serial.println((String)"IR distances are: " + (String)" IR Long Right = " + FR_IR_Data[0] + (String)" IR Long Left = " + FL_IR_Data[0] + (String)" IR Short Right = " + BR_IR_Data[0] + (String) " IR Short Left = " + BL_IR_Data[0]);
-
-        GyroAngle=gyro_read();
-        
-        //wrap angle moved
-        if (GyroAngle> 90) {
-          angleMoved = (360- GyroAngle)-initialAngle;
-        }else{
-          angleMoved= GyroAngle-initialAngle; 
         }
-        
-        //Calculate errors
-        error_long = target - long_IR;
-        error_short = target - short_IR;
-        //Serial.println((String)"Errors are: " + (String)" Long IR = " + error_long + (String)" Short IR = " + error_short);
-        BluetoothSerial.println((String)"Current Long IR is: " + long_IR + (String)", Error is: " + error_long+(String)"Current Short IR is: " + short_IR + (String)", Error is: " + error_short);
-
-        //If wall is too far, strafe left or right.
-        if((((error_long+error_short)/2)<(-1*strafe_thresh)&&left==1)||((((error_long+error_short)/2)>strafe_thresh) &&left==0)){
-          StrafeDistance(abs(error_long+error_short)/2,true,initialAngle);
-        }else if ((((error_long+error_short)/2)<(-1*strafe_thresh)&&left==0)||((((error_long+error_short)/2)>strafe_thresh) &&left==1)){
-          StrafeDistance(abs(error_long+error_short)/2,false,initialAngle);
-        }
-        
-        controller(error_long, 10, 50, 0.05, 5,0.5,long_feedback);
-        controller(error_short, 10, 50, 0.05, 5,0.5,short_feedback);
-        controller(angleMoved, 5, 50, 0, 5,1,gyro_feedback);
-
-        speed_long = constrain(long_feedback[0], -500, 500);
-        speed_short = constrain(short_feedback[0], -500, 500);
-        drive_forward((long_feedback[0]+short_feedback[0])/2,0); //??????????????????? would kind of average out STARTS STRAFING
-        //BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + long_feedback[0] + (String)" Left Side = " + short_feedback[0]);
-        //BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_long + (String)" Left Side = " + speed_short);
-        while (abs(travel_angle) > 5) {
-          BluetoothSerial.println("Gyro forward!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-          gyro_forward(15,initialAngle);
-          travel_angle = gyro_read();
-          break;
-        }
-
-        if (millis() - prev_millis > 400) {
-          CoordUpdate();
-          prev_millis = millis();
-        }
-
-       }
-    }
+//        y = y + (half_second_count * (22.5 / (strafe_time * 2)));
+//        if (millis() - prev_millis > 500) {
+//          prev_millis = millis();
+//          half_second_count++;
+//         }
+        //}
+        y_distance=y_distance+22.5;
+        stop();
+  }
+  
 void MiddleStrafe1(int isLeft, float iAngle) {
   StrafeDistance(22.5, isLeft, iAngle);
 
@@ -793,12 +625,12 @@ void WallFollow() {
     //Serial.println((String)"Errors are: " + (String)" Long IR = " + error_long + (String)" Short IR = " + error_short);
     BluetoothSerial.println((String)"Current Long IR is: " + long_IR + (String)", Error is: " + error_long + (String)"Current Short IR is: " + short_IR + (String)", Error is: " + error_short);
 
-//    //If wall is too far, strafe left or right.
-//    if ((((error_long + error_short) / 2) < (-1 * strafe_thresh) && left == 1) || ((((error_long + error_short) / 2) > strafe_thresh) && left == 0)) {
-//      StrafeDistance(abs(error_long + error_short) / 2, true, initialAngle);
-//    } else if ((((error_long + error_short) / 2) < (-1 * strafe_thresh) && left == 0) || ((((error_long + error_short) / 2) > strafe_thresh) && left == 1)) {
-//      StrafeDistance(abs(error_long + error_short) / 2, false, initialAngle);
-//    }
+  //    //If wall is too far, strafe left or right.
+  //    if ((((error_long + error_short) / 2) < (-1 * strafe_thresh) && left == 1) || ((((error_long + error_short) / 2) > strafe_thresh) && left == 0)) {
+  //      StrafeDistance(abs(error_long + error_short) / 2, true, initialAngle);
+  //    } else if ((((error_long + error_short) / 2) < (-1 * strafe_thresh) && left == 0) || ((((error_long + error_short) / 2) > strafe_thresh) && left == 1)) {
+  //      StrafeDistance(abs(error_long + error_short) / 2, false, initialAngle);
+  //    }
 
     controller(error_long, 5.5, 0.9, 0.05, 1, 0.5, long_feedback);
     controller(error_short, 5.5, 0.9, 0.05, 1, 0.5, short_feedback);
@@ -1077,48 +909,6 @@ void stop() //Stop
   right_rear_motor.writeMicroseconds(1500);
   right_font_motor.writeMicroseconds(1500);
 }
-void gyro_forward(float target, float initialAngle) {
-  //target positive for forward, negative for backward
-  float angleMoved, GyroAngle = 0;
-  float feedback[] = {0, 500}; //controller feedback array, where feedback[0] is u and feedback[1] is timer
-  bool backwards = false;
-
-  float ultra = HC_SR04_range();
-  //while timer is greater than 0, the error hasn't been settled for more than 5 ms.
-
-  //Wrapping target so positive is forward, negative is backward
-  if (target < 0) { 
-    target = 200 - 24 + target;
-    backwards = true;
-  }
-
-  BluetoothSerial.println((String)"target is " + target + "ultra is " + ultra);
-  while (((ultra > target) && !backwards) || ((ultra < target) && backwards)) {
-    //wrap initial angle
-    if (initialAngle > 90) {
-      initialAngle = initialAngle - 360;
-    }
-    GyroAngle = gyro_read();
-    if (GyroAngle > 90) {
-      angleMoved = (GyroAngle - 360) - initialAngle;
-    } else {
-      angleMoved = GyroAngle - initialAngle;
-    }
-    BluetoothSerial.println((String)("initial angle is : ") + initialAngle + (String)("angle reading: ") +  GyroAngle + (String)("error: ") + angleMoved + (String)", adjustment: " + feedback[0]);
-
-    controller(angleMoved, 10, 50, 0, 5, 1, feedback);
-    if (backwards) {
-      drive_backward(0, feedback[0]);
-    } else {
-      drive_forward(0, 0, feedback[0]);
-    }
-    ultra = HC_SR04_range();
-  }
-
-  stop();
-  delay(1000);//VERY IMPORTANTTT!!! FOR GYRO TO GO STRAIGHT need enough time for the motors to settle down.
-
-}
 
 // PI controller helper function
 void controller(float error, float kp, float ki, float kd, float integral_limit, float error_limit, float feedback[]) {
@@ -1150,7 +940,7 @@ void controller(float error, float kp, float ki, float kd, float integral_limit,
 
 }
 
-  void gyro_forward(float target, float initialAngle){
+void gyro_forward(float target, float initialAngle){
     //target positive for forward, negative for backward
       float angleMoved,GyroAngle=0;
       float feedback[]={0,500};//controller feedback array, where feedback[0] is u and feedback[1] is timer
@@ -1185,18 +975,18 @@ void controller(float error, float kp, float ki, float kd, float integral_limit,
         if (backwards){
           drive_backward(0,feedback[0]);
         }else{
-          drive_forward(0,feedback[0]);
+          drive_forward(0,0,feedback[0]);
         }
         ultra = HC_SR04_range();
 
-//        int wait = 1000;
-//        int wait_millis = millis();
-//        while (millis() - wait_millis < 1000) {
-//          if (millis() - prev_millis > 450) {
-//            CoordUpdate();
-//            prev_millis = millis();
-//          }
-//        }
+  //        int wait = 1000;
+  //        int wait_millis = millis();
+  //        while (millis() - wait_millis < 1000) {
+  //          if (millis() - prev_millis > 450) {
+  //            CoordUpdate();
+  //            prev_millis = millis();
+  //          }
+  //        }
 
         if (millis() - prev_millis > 450) {
           CoordUpdate();
@@ -1665,6 +1455,8 @@ void StrafeTime(float timeToStrafe, boolean isLeft, float initialAngle) {
   float gyroIntegralLimit = angleEffortLimit[1] / gyroGains[0]; // Set max error boundary for integral gain to be applied to control system
   int timer = 300; // Initialise tolerance timer.
 
+    float prev_millis = millis(); //for coords
+
 
   //Wrap initial angle
   if (initialAngle > 90) {
@@ -1770,10 +1562,6 @@ void StrafeTime(float timeToStrafe, boolean isLeft, float initialAngle) {
     //BluetoothSerial.println("Strafing Complete");
     stop();
     delay(1000);//VERY IMPORTANTTT!!! FOR GYRO TO GO STRAIGHT need enough time for the motors to settle down.
-  }
-  BluetoothSerial.println("Strafing Complete");
-  stop();
-  delay(1000);//VERY IMPORTANTTT!!! FOR GYRO TO GO STRAIGHT need enough time for the motors to settle down.
 }
 //#pragma endregion end
 
