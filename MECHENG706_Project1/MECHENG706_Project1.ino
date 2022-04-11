@@ -170,10 +170,14 @@ STATE running() {
   BluetoothSerial.println("=============================================================");
   BluetoothSerial.println("Started the course.");
   BluetoothSerial.println("=============================================================");
-
-  //gyro_forward(15,0);
+  while (1){
+    gyro_forward(15,0);
+  }
+//  while(1){
+//    gyro_read();
+//  }
  //FindCorner();
- WallFollow();
+ //WallFollow();
  //altMiddleLogic();
  //WallFollow();
  //AlignToWall(true);
@@ -969,14 +973,23 @@ void gyro_forward(float target, float initialAngle){
         }else{
           angleMoved= GyroAngle-initialAngle; 
         }
-        //BluetoothSerial.println((String)("initial angle is : ") + initialAngle+(String)("angle reading: ") +  GyroAngle+(String)("error: ") + angleMoved + (String)", adjustment: " + feedback[0]);
+        BluetoothSerial.println((String)("initial angle is : ") + initialAngle+(String)("angle reading: ") +  GyroAngle+(String)("error: ") + angleMoved + (String)", adjustment: " + feedback[0]);
 
-        controller(angleMoved, 10, 50, 0, 5,1,feedback);        
+        //controller(angleMoved, 10, 50, 0, 5,1,feedback);        
+        controller(angleMoved,24,2,0.005,10,1,feedback);
+
+//        //To account for fluctuations in gyroscope. If the change in error is small, make error 0.
+//        if (abs(angleMoved)<1){
+//          feedback[0]=0;
+//        }
+
         if (backwards){
           drive_backward(0,feedback[0]);
         }else{
           drive_forward(0,0,feedback[0]);
         }
+
+
         ultra = HC_SR04_range();
 
   //        int wait = 1000;
