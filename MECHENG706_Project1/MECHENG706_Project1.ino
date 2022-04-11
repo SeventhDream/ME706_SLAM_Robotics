@@ -345,7 +345,7 @@
 
       gyro_forward(15,iAngle);
       StrafeTime(1000,false,iAngle);
-      //delay(3000);
+      delay(1000);
       
       gyro_forward(-15,iAngle);
       StrafeTime(1000,false,iAngle);
@@ -383,7 +383,7 @@
   }
   void MiddleLogic() {
     
-    //Reading sensor values
+    //Reading sensor values.
     float FR_IR_Data[] = {0,999};
     FR_IR(FR_IR_Data);
     float FL_IR_Data[] = {0,999};
@@ -914,7 +914,7 @@
     //target positive for forward, negative for backward
       float angleMoved,GyroAngle=0;
       float feedback[]={0,500};//controller feedback array, where feedback[0] is u and feedback[1] is timer
-      bool backwards=false;
+      bool backwards = false;
 
       float ultra = HC_SR04_range();
       //while timer is greater than 0, the error hasn't been settled for more than 5 ms.
@@ -923,8 +923,8 @@
 
       //Wrapping target so positive is forward, negative is backward
       if (target<0){
-        target=200-24+target;
-        backwards=true;
+        target = 200 - 24 + target;
+        backwards = true;
       }
       
       BluetoothSerial.println((String)"gyro_forward() target is "+target+" ultra is "+ultra);
@@ -948,15 +948,6 @@
           drive_forward(0,feedback[0]);
         }
         ultra = HC_SR04_range();
-
-//        int wait = 1000;
-//        int wait_millis = millis();
-//        while (millis() - wait_millis < 1000) {
-//          if (millis() - prev_millis > 450) {
-//            CoordUpdate();
-//            prev_millis = millis();
-//          }
-//        }
 
         if (millis() - prev_millis > 450) {
           CoordUpdate();
