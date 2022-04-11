@@ -438,6 +438,7 @@ void MiddleLogic() {
     start_printing = 1; // added by Lara to start mapping
     
   }
+}
   void WallFollow() {
       float ultra = HC_SR04_range();
  	    float initialAngle = 0;
@@ -537,28 +538,9 @@ void MiddleLogic() {
 
        }
     }
-  }
-  else {
-    BluetoothSerial.println("Strafing Using Right Sesnors");
-    if (y_distance < 60) {
-      StrafeDistance(y_distance, true, iAngle);
-    }
-    else {
-      StrafeDistance(y_distance, false, iAngle);
-    }
-  }
-  //        y = y + (half_second_count * (22.5 / (strafe_time * 2)));
-  //        if (millis() - prev_millis > 500) {
-  //          prev_millis = millis();
-  //          half_second_count++;
-  //         }
-  //}
-  y_distance = y_distance + 22.5;
-  stop();
-}
-
 void MiddleStrafe1(int isLeft, float iAngle) {
   StrafeDistance(22.5, isLeft, iAngle);
+
 }
 
 void FindCorner()
@@ -1110,7 +1092,7 @@ void controller(float error, float kp, float ki, float kd, float integral_limit,
       
       stop();
       delay(1000);//VERY IMPORTANTTT!!! FOR GYRO TO GO STRAIGHT need enough time for the motors to settle down.
-
+  }
 // Determine effort signal to output for PID control based on input error, PID gains, and integral limit.
 void PID_Control(float error[], float gains[], float *derivative, float *integral, float *integralLimit, float *u, float effortLimit[]) {
 
