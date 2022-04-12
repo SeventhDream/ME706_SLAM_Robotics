@@ -4,7 +4,6 @@
 #include <Servo.h>  //Need for Servo pulse output
 #include <SoftwareSerial.h> //Need for Wireless module
 
-
 //#define NO_READ_GYRO  //Uncomment of GYRO is not attached.
 //#define NO_HC-SR04 //Uncomment of HC-SR04 ultrasonic ranging sensor is not attached.
 //#define NO_BATTERY_V_OK //Uncomment of BATTERY_V_OK if you do not care about battery damage.
@@ -17,6 +16,10 @@ const byte interruptPin = 5;
 #define OUTPUTMONITOR 0 // USB Serial Port
 #define OUTPUTPLOTTER 0 // USB Serial Plotter
 #define OUTPUTBLUETOOTHMONITOR 1 // Bluetooth Serial Port
+
+//Servo motor setup
+Servo servo1;
+int posn=90;//facing forward
 
 SoftwareSerial BluetoothSerial(BLUETOOTH_RX, BLUETOOTH_TX);
 
@@ -96,6 +99,11 @@ void setup(void)
 
   //Gyroscope Setup Start
   pinMode(sensorPin, INPUT);
+
+  
+  //Servo setup
+  //servo1.attach(A9);
+  
   int i;
   float sum = 0;
   for (i = 0; i < 100; i++) //read 100 values of voltage when gyro is at still, to calculate the zero-drift
@@ -158,6 +166,7 @@ STATE running() {
   float backL[] = {0, 999};
   float backR[] = {0, 999};
   float initAngle = gyro_read();
+  float ultra = HC_SR04_range();
   static unsigned long previous_millis;
   fast_flash_double_LED_builtin();
 
@@ -170,6 +179,13 @@ STATE running() {
   BluetoothSerial.println("=============================================================");
   BluetoothSerial.println("Started the course.");
   BluetoothSerial.println("=============================================================");
+  //ServoFaceRight();
+  
+  while(1){
+    ultra = HC_SR04_range();
+    BluetoothSerial.println((String)"ultra reading is" + ultra);
+    delay(100);
+  }
 //  while (1) {
 //    gyro_forward(5, initAngle);
 //  }
@@ -180,7 +196,7 @@ STATE running() {
 //  AlignToWall(false);
 //  
   //FindCorner();
-  WallFollow2();
+  //WallFollow2();
  //altMiddleLogic();
   //WallFollow();
   //AlignToWall(true);
@@ -870,6 +886,106 @@ void WallFollow2() {
 }
 }
 
+void WallFollow3() {
+  float ultra = HC_SR04_range();
+  float initialAngle = gyro_read();
+  float angleMoved, GyroAngle = 0;
+  
+  float error_long, error_short, error,long_IR, short_IR, travel_angle,left,adjustment= 0;
+  float target = 7.5 ;
+
+  float FR_IR_Data[] = {0, 999};
+  float FL_IR_Data[] = {0, 999};
+  float BL_IR_Data[] = {0, 999};
+  float BR_IR_Data[] = {0, 999};
+
+  //controller arrays
+  float feedback[] = {0, 500};
+
+
+  // Determining if the wall is on the left or right
+  //Serial.println((String)"Initial IR distances are: " + (String)" IR Long Right = " + FR_IR_Data[0] + (String)" IR Long Left = " + FL_IR_Data[0] + (String)" IR Short Right = " + BR_IR_Data[0] + (String) " IR Short Left = " + );
+  // Closed loop controls
+  // While long and short timers have not settled at same error for more than 500ms and ultra is more than 15cm away.
+  while (ultra > 15) {
+    //Rereading sensor values
+    FR_IR(FR_IR_Data);
+    FL_IR(FL_IR_Data);
+    BR_IR(BR_IR_Data);
+    BL_IR(BL_IR_Data);
+    ultra = HC_SR04_range();
+    travel_angle = gyro_read();
+
+    //wrap travel angle
+    if (travel_angle > 90) {
+      travel_angle = travel_angle - 360;
+    }
+
+    //Setting up interupt to start printing coordinates every 0.5sec
+    if (start_printing = 0) {
+      start_printing = 1;
+      x = 0;
+      y = 0;
+    }
+
+    if ((FR_IR_Data[0] - target) < (FL_IR_Data[0] - target)) { //indicates whether the wall is on left side or right side
+      //Serial.println("Wall is on the right!");
+      left = -1;
+      long_IR = FR_IR_Data[0];
+      short_IR = BR_IR_Data[0];
+    }
+    else {
+      //Serial.println("Wall is on the left!");
+      left = 1;
+      long_IR = FL_IR_Data[0];
+      short_IR = BL_IR_Data[0];
+    }
+    //Serial.println((String)"IR distances are: " + (String)" IR Long Right = " + FR_IR_Data[0] + (String)" IR Long Left = " + FL_IR_Data[0] + (String)" IR Short Right = " + BR_IR_Data[0] + (String) " IR Short Left = " + BL_IR_Data[0]);
+
+    GyroAngle = gyro_read();
+
+    //wrap angle moved
+    if (GyroAngle > 90) {
+      angleMoved = (360 - GyroAngle) - initialAngle;
+    } else {
+      angleMoved = GyroAngle - initialAngle;
+    }
+    //Calculate errors
+    error_long = target - long_IR;
+    error_short = target - short_IR;
+    //Serial.println((String)"Errors are: " + (String)" Long IR = " + error_long + (String)" Short IR = " + error_short);
+
+//    if( abs(error_long)<1 && abs(error_short)<1){
+//      controller(error_long, 5, 0, 0, 2, 0.5, long_feedback);
+//      controller(error_short,5, 0, 0, 2, 0.5, short_feedback);
+//      controller(angleMoved, 20, 0, 0, 1, 1, gyro_feedback);
+//    }else{
+//      controller(error_long, 5, 0.1, 0, 2, 0.5, long_feedback);
+//      controller(error_short,5, 0.1, 0, 2, 0.5, short_feedback);
+//      //controller(angleMoved,10,0.015,0.005,1,1,gyro_feedback);
+//      controller(angleMoved, 20, 0, 0, 1, 1, gyro_feedback);    
+//    }
+
+    if( abs(error_long)<0.5 && abs(error_short)<0.5){
+      BluetoothSerial.println("gyro drive!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+      drive_forward(0,0,0,150);
+    }else{     
+    error=((error_long+error_short)+sin(angleMoved*3.1415926/180))/2;
+    //error=((long_IR-short_IR)+sin(angleMoved*3.1415926/180))/2;
+    BluetoothSerial.println((String)"overall error is : "+error+(String)"Current Long IR is: " + long_IR + (String)", Error is: " + error_long + (String)"Current Short IR is: " + short_IR + (String)", Error is: " + error_short);
+
+      //      controller(error, 10,10, 0.05, 1, 0.5, feedback);
+      //      controller(error, 15,8, 0.05, 0.8, 0.5, feedback);
+      controller(error, 20,1.2, 0.05, 0.8, 0.5, feedback);
+      
+      adjustment = constrain(feedback[0], -500, 500);
+      drive_forward(0,0,-1*adjustment,150);
+    
+    //BluetoothSerial.println((String)" long IR timer is " + long_feedback[0] + (String)" Short IR timer is" + short_feedback[1]);
+    //BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_long + (String)" Left Side = " + speed_short);  
+}
+}
+}
 void cw ()
 {
   left_font_motor.writeMicroseconds(1500 + speed_val);
@@ -1793,6 +1909,18 @@ void StrafeTime(float timeToStrafe, boolean isLeft, float initialAngle) {
   stop();
   delay(500);//VERY IMPORTANTTT!!! FOR GYRO TO GO STRAIGHT need enough time for the motors to settle down.
 }
+
+void ServoFaceForward(){
+  servo1.write(90);
+}
+
+void ServoFaceLeft(){
+  servo1.write(180);
+}
+
+void ServoFaceRight(){
+  servo1.write(0);
+}
 //#pragma endregion end
 
 //=============================================================
@@ -1971,6 +2099,7 @@ float HC_SR04_range()
   while ( digitalRead(ECHO_PIN) == 0 ) {
     t2 = micros();
     pulse_width = t2 - t1;
+    //BluetoothSerial.println((String)"Pulse width is: " + pulse_width);
     if ( pulse_width > (MAX_DIST + 1000)) {
       SerialCom->println("HC-SR04: NOT found");
       return;
@@ -1985,6 +2114,7 @@ float HC_SR04_range()
   {
     t2 = micros();
     pulse_width = t2 - t1;
+    //BluetoothSerial.println((String)"Pulse width is: " + pulse_width);
     if ( pulse_width > (MAX_DIST + 1000) ) {
       SerialCom->println("HC-SR04: Out of range");
       return;
