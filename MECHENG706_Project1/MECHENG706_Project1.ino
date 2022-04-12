@@ -310,89 +310,91 @@ void altMiddleLogic() {
   if (((FR_IR_Data[0] + BR_IR_Data[0]) / 2) > ((FL_IR_Data[0] + BL_IR_Data[0]) / 2)) {
     //wall is on the left
     StrafeTime(strafeT, false, iAngle);
-    gyro_forward(-3, iAngle);
-//    AlignToWall(false);
-    iAngle=gyro_read();
-   
-    StrafeTime(strafeT, false, iAngle);
-    gyro_forward(5, iAngle);
-    iAngle=gyro_read();
-    
+    gyro_forward(-15, iAngle);
     StrafeTime(strafeT, false, iAngle);
     gyro_forward(-3, iAngle);
     iAngle=gyro_read();
     
+    gyro_forward(15, iAngle);
     StrafeTime(strafeT, false, iAngle);
     gyro_forward(5, iAngle);
     iAngle=gyro_read();
     
+    gyro_forward(-15, iAngle);
     StrafeTime(strafeT, false, iAngle);
     gyro_forward(-3, iAngle);
-    iAngle=gyro_read();
-
-    StrafeTime(strafeT, false, iAngle);
-    gyro_forward(5, iAngle);
-    iAngle=gyro_read();
-
-    StrafeTime(strafeT, false, iAngle);
-    gyro_forward(-3, iAngle);
-    iAngle=gyro_read();
-
-    StrafeTime(strafeT, false, iAngle);
-    gyro_forward(5, iAngle);
-    iAngle=gyro_read();
-
-    //AlignToWall(true);
     iAngle=gyro_read();
     
-    //SonarDistance(160,iAngle,true);
+    gyro_forward(15, iAngle);
+    StrafeTime(strafeT, false, iAngle);
+    gyro_forward(5, iAngle);
+    iAngle=gyro_read();
+    
+    gyro_forward(-15, iAngle);
+    StrafeTime(strafeT, false, iAngle);
+    gyro_forward(-3, iAngle);
+    iAngle=gyro_read();
+
+    gyro_forward(15, iAngle);
+    StrafeTime(strafeT, false, iAngle);
+    gyro_forward(5, iAngle);
+    iAngle=gyro_read();
+
+    gyro_forward(-15, iAngle);
+    StrafeTime(strafeT, false, iAngle);
+    gyro_forward(-3, iAngle);
+    iAngle=gyro_read();
+
+    gyro_forward(15, iAngle);
+    StrafeTime(strafeT, false, iAngle);
+    gyro_forward(5, iAngle);
+    iAngle=gyro_read();
+    
     StrafeDistance(15, false, iAngle); //false means right
     AlignToWall(true);//false is left, true is right
   }
   else {
     //wall is on the right
     StrafeTime(strafeT, true, iAngle);
+    gyro_forward(-15, iAngle);
+    StrafeTime(strafeT, true, iAngle);
     gyro_forward(-3, iAngle);
     iAngle=gyro_read();
     
-//    AlignToWall(true);
-//    iAngle=gyro_read();
-
+    gyro_forward(15, iAngle);
+    StrafeTime(strafeT, true, iAngle);
+    gyro_forward(5, iAngle);
+    iAngle=gyro_read();
+    
+    gyro_forward(-15, iAngle);
+    StrafeTime(strafeT, true, iAngle);
+    gyro_forward(-3, iAngle);
+    iAngle=gyro_read();
+    
+    gyro_forward(15, iAngle);
     StrafeTime(strafeT, true, iAngle);
     gyro_forward(5, iAngle);
     iAngle=gyro_read();
 
-    StrafeTime(strafeT  , true, iAngle);
-    gyro_forward(-3, iAngle);
-    iAngle=gyro_read();
-    
-    StrafeTime(strafeT, true, iAngle);
-    gyro_forward(5, iAngle);
-    iAngle=gyro_read();
-
+    gyro_forward(-15, iAngle);
     StrafeTime(strafeT, true, iAngle);
     gyro_forward(-3, iAngle);
     iAngle=gyro_read();
     
+    gyro_forward(15, iAngle);
     StrafeTime(strafeT, true, iAngle);
     gyro_forward(5, iAngle);
     iAngle=gyro_read();
     
+    gyro_forward(-15, iAngle);
     StrafeTime(strafeT, true, iAngle);
     gyro_forward(-3, iAngle);
     iAngle=gyro_read();
     
+    gyro_forward(15, iAngle);
     StrafeTime(strafeT, true, iAngle);
     gyro_forward(5, iAngle);
-    iAngle=gyro_read();
-    
-    StrafeTime(strafeT, true, iAngle);
-    gyro_forward(-3, iAngle);
-    iAngle=gyro_read();     
-    
-    StrafeTime(strafeT, true, iAngle);
-    AlignToWall(false);
-    iAngle=gyro_read();
+    iAngle=gyro_read();  
     
     StrafeDistance(15, true, iAngle); //false means right
     AlignToWall(false);//false is left, true is right
