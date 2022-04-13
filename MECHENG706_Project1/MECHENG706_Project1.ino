@@ -645,7 +645,7 @@ void WallFollowUltra() {
   float short_feedback[] = {0, 500};
   float gyro_feedback[] = {0, 500};
   float Ultra_Data[] = {0, 999};
-  bool Forward=false;
+  bool Forward=true;
   // Determining if the wall is on the left or right
   //Serial.println((String)"Initial IR distances are: " + (String)" IR Long Right = " + FR_IR_Data[0] + (String)" IR Long Left = " + FL_IR_Data[0] + (String)" IR Short Right = " + BR_IR_Data[0] + (String) " IR Short Left = " + );
   // Closed loop controls
@@ -688,12 +688,11 @@ void WallFollowUltra() {
 
   float starting=millis();
 
-  if((Ultra_Data[0])>100){
-    Forward=true;
-  }else{
-    Forward=false;
-  }
-
+//  if((Ultra_Data[0])>100){
+//    Forward=true;
+//  }else{
+//    Forward=false;
+//  }
   while (millis()-starting<13500) {//ultraFront > 15
     //Rereading sensor values
     BR_IR(BR_IR_Data);
