@@ -303,7 +303,7 @@ void CoordUpdate() {
   float FL_IR_Data[] = {0, 999};
   FR_IR(FR_IR_Data); // Front right IR sensor reading
   FL_IR(FL_IR_Data); // Front left IR sensor reading
-  //!isLeft means the wallstartedon the left
+
   x = 200 - (HC_SR04_range() + (24 / 2)); // 12 / 2 is distance between sonar and middle of robot (**TUNING NEEDED**)
   BluetoothSerial.println((String)"IR right is:" + FR_IR_Data[0] + (String)"IR left is:" + FL_IR_Data[0]);
   if (!global_isLeft) {
@@ -321,12 +321,15 @@ void CoordUpdate() {
     }
 
   }
-  BluetoothSerial.println("COORDINATES UPDATING!");
-  BluetoothSerial.print("(x, y) = ");
-  BluetoothSerial.print(x);
-  BluetoothSerial.print(", ");
-  BluetoothSerial.println(y);
-  //print to textfile/serial output here
+  if (start_printing) {
+    //print to Putty serial monitor
+    BluetoothSerial.println("COORDINATES UPDATING!");
+    BluetoothSerial.print("(x, y) = (");
+    BluetoothSerial.print(x);
+    BluetoothSerial.print(", ");
+    BluetoothSerial.println(y);
+    BluetoothSerial.print(")");
+  }
 }
 //#pragma endregion end
 
@@ -681,11 +684,19 @@ void WallFollowUltra() {
   //ultraFront = HC_SR04_range();
   ULTRA_DIST(Ultra_Data);
 
+  if (start_printing == 0) {
+    start_printing = 1;
+    x = 0;
+    y = 0;
+  }
+
   if (BR_IR_Data[0] < BL_IR_Data[0]) { //indicates whether the wall is on left side or right side
     //Serial.println("Wall is on the right!");
+    global_isLeft = 0;
     ServoFaceRight();
     delay(500);
   } else {
+      global_isLeft = 1;
       //Serial.println("Wall is on the left!");
       ServoFaceLeft();
       delay(500);
