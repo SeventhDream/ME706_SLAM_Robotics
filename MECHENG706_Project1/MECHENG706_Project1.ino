@@ -87,6 +87,8 @@ float x = 0;
 float y = 0;
 bool start_printing = 0; //set to 1 right before the first wall follow begins
 bool global_isLeft = 0; // = 1 if the wall is on the left when the robot is in starting corner (needs to be implemented at the end of FindCorner())
+bool servo_forward = 0;
+int index = 0;
 
 void setup(void)
 {
@@ -180,13 +182,16 @@ STATE running() {
   BluetoothSerial.println("Started the course.");
   BluetoothSerial.println("=============================================================");
 
-  StrafeSonar(25,1);
+
+  
+
+  //StrafeSonar(25,1);
 
 // StrafeDistance(15,false,initAngle);
  //altFindCorner();
- SonarFaceWall();
- delay(500);
- WallFollowUltra();
+ //SonarFaceWall();
+ //delay(500);
+ //WallFollowUltra();
 //AlignToWall(true);
 
    //FindCorner();
@@ -869,7 +874,8 @@ void WallFollowUltra() {
 //  }else{
 //    Forward=false;
 //  }
-  while (millis()-starting<13500) {//ultraFront > 15
+  while (millis() - starting < 13500) {//ultraFront > 15
+    
     //Rereading sensor values
     BR_IR(BR_IR_Data);
     BL_IR(BL_IR_Data);
@@ -886,6 +892,15 @@ void WallFollowUltra() {
       x = 0;
       y = 0;
     }
+
+    x = ((millis() - starting) / 13500) * 2000;
+    if (index < 4) {
+      y = Ultra_Data[0] + 2;
+    }
+    else {
+      y = 120 - (Ultra_Data[0] + 2);
+    }
+    
     if (BR_IR_Data[0] < BL_IR_Data[0]) { //indicates whether the wall is on left side or right side
       //Serial.println("Wall is on the right!");
       //ServoFaceRight();
