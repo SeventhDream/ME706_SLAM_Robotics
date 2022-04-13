@@ -179,32 +179,52 @@ STATE running() {
   BluetoothSerial.println("=============================================================");
   BluetoothSerial.println("Started the course.");
   BluetoothSerial.println("=============================================================");
+   
+  WallFollowUltra();
+
+//   strafe_right(0,150);
+//   strafe_left(0,150);
+//
+//   StrafeSonar(25,1);
+
 
 // StrafeDistance(15,false,initAngle);
 // AlignToWall(true);
 
-   FindCorner();
+// FindCorner();
   
-  BR_IR(backR);
-  BL_IR(backL);
+//  BR_IR(backR);
+//  BL_IR(backL);
+//
+//  if (backR[0] < backL[0]) { //indicates whether the wall is on left side or right side
+//    //Serial.println("Wall is on the right!");
+//    ServoFaceRight();
+//    delay(1000);
+//  } else {
+//    //Serial.println("Wall is on the left!");
+//    ServoFaceLeft();
+//    delay(1000);
+//  }
+//
+//  WallFollowUltra();
+//  ServoFaceForward();
+//  delay(1000);
+// 
+//  altMiddleLogic();
+//
+//  if (backR[0] < backL[0]) { //indicates whether the wall is on left side or right side
+//    //Serial.println("Wall is on the right!");
+//    ServoFaceRight();
+//    delay(1000);
+//  } else {
+//    //Serial.println("Wall is on the left!");
+//    ServoFaceLeft();
+//    delay(1000);
+//  }
+//
+//  WallFollowUltra();
 
-  if (backR[0] < backL[0]) { //indicates whether the wall is on left side or right side
-    //Serial.println("Wall is on the right!");
-    ServoFaceRight();
-    delay(1000);
-  } else {
-    //Serial.println("Wall is on the left!");
-    ServoFaceLeft();
-    delay(1000);
-  }
-
-  WallFollowUltra();
-  ServoFaceForward();
-  delay(1000);
- 
-  altMiddleLogic();
-
-  delay(3000);
+  delay(5000);
 //  BluetoothSerial.println("STOPPED");
   return STOPPED;
   /*--------------------------------------COURSE END----------------------------------------*/
@@ -326,13 +346,18 @@ void altMiddleLogic() {
   float forwardsmash = 3;
   float backwardsmash = -2.2;
 
-  float strafeT = 700;
+  float strafeT = 615;
   if (((FR_IR_Data[0] + BR_IR_Data[0]) / 2) > ((FL_IR_Data[0] + BL_IR_Data[0]) / 2)) {
     //wall is on the left
     StrafeTime(strafeT, false, iAngle);
-
+    drive_forward(0, 0, 0, 150);
+    delay(500);
+    stop();
+    delay(100);
+    
     gyro_forward(backwardsmash, iAngle,1);
     StrafeTime(strafeT, false, iAngle);
+    StrafeSonar(25,1);
     drive_backward(0, 0, 0, 150);
     delay(500);
     stop();
@@ -341,6 +366,43 @@ void altMiddleLogic() {
 
     gyro_forward(forwardsmash, iAngle,1);
     StrafeTime(strafeT, false, iAngle);
+    StrafeSonar(25,1);
+    drive_forward(0, 0, 0, 150);
+    delay(500);
+    stop();
+    delay(100);
+    iAngle = gyro_read();
+
+    gyro_forward(backwardsmash, iAngle,1);
+    StrafeTime(strafeT, false, iAngle);
+    StrafeSonar(25,1);
+    drive_backward(0, 0, 0, 150);
+    delay(500);
+    stop();
+    delay(100);
+    iAngle = gyro_read();
+
+    gyro_forward(forwardsmash, iAngle,1);
+    StrafeTime(strafeT, false, iAngle);
+    StrafeSonar(25,1);
+    drive_forward(0, 0, 0, 150);
+    delay(500);
+    stop();
+    delay(100);
+    iAngle = gyro_read();
+
+    gyro_forward(backwardsmash, iAngle,1);
+    StrafeTime(strafeT, false, iAngle);
+    StrafeSonar(25,1);
+    drive_backward(0, 0, 0, 150);
+    delay(500);
+    stop();
+    delay(100);
+    iAngle = gyro_read();
+
+    gyro_forward(forwardsmash, iAngle,1);
+    StrafeTime(strafeT, false, iAngle);
+    StrafeSonar(25,1);
     drive_forward(0, 0, 0, 150);
     delay(500);
     stop();
@@ -363,37 +425,7 @@ void altMiddleLogic() {
     delay(100);
     iAngle = gyro_read();
 
-    gyro_forward(backwardsmash, iAngle,1);
-    StrafeTime(strafeT, false, iAngle);
-    drive_backward(0, 0, 0, 150);
-    delay(500);
-    stop();
-    delay(100);
-    iAngle = gyro_read();
-
-    gyro_forward(forwardsmash, iAngle,1);
-    StrafeTime(strafeT, false, iAngle);
-    drive_forward(0, 0, 0, 150);
-    delay(500);
-    stop();
-    delay(100);
-    iAngle = gyro_read();
-
-    gyro_forward(backwardsmash, iAngle,1);
-    StrafeTime(strafeT, false, iAngle);
-    drive_backward(0, 0, 0, 150);
-    delay(500);
-    stop();
-    delay(100);
-    iAngle = gyro_read();
-
-    gyro_forward(forwardsmash, iAngle,1);
-    StrafeTime(strafeT, false, iAngle);
-    drive_forward(0, 0, 0, 150);
-    delay(500);
-    stop();
-    delay(100);
-    iAngle = gyro_read();
+    TurnByAngle(180);
 
     StrafeDistance(15, false, iAngle); //false means right
     AlignToWall(true);//false is left, true is right
@@ -401,7 +433,10 @@ void altMiddleLogic() {
   else {
     //wall is on the right
     StrafeTime(strafeT, true, iAngle);
-
+    drive_forward(0, 0, 0, 150);
+    delay(500);
+    stop();
+    delay(100);
 
     gyro_forward(backwardsmash, iAngle,1);
     StrafeTime(strafeT, true, iAngle);
@@ -466,6 +501,8 @@ void altMiddleLogic() {
     stop();
     delay(100);
     iAngle = gyro_read();
+    
+    TurnByAngle(180);
 
     StrafeDistance(15, true, iAngle); //false means right
     AlignToWall(false);//false is left, true is right
@@ -656,6 +693,7 @@ void WallFollowUltra() {
     delay(500);
   } else {
       global_isLeft = 1;
+  }
 //  if (BR_IR_Data[0] < BL_IR_Data[0]) { //indicates whether the wall is on left side or right side
 //    //Serial.println("Wall is on the right!");
 //    ServoFaceRight();
@@ -1266,27 +1304,24 @@ if (isWallOnRight) { //Wall is on the right
 }
 
 // Strafe left at fixed speed value.
-void strafe_left (float u1, float u2, float speedval)
+void strafe_left (float u, float speedval)
 {
-  u1 = constrain(u1, -1 * speedval, speedval);
-  u2 = constrain(u2, -1 * speedval, speedval);
+  u = constrain(u, -1 * speedval, speedval);
 
-  left_font_motor.writeMicroseconds(1500 - speedval - u1);
-  left_rear_motor.writeMicroseconds(1500 + speedval + u1);
-  right_rear_motor.writeMicroseconds(1500 + speedval - u2);
-  right_font_motor.writeMicroseconds(1500 - speedval + u2);
+  left_font_motor.writeMicroseconds(1500 - speedval - u);
+  left_rear_motor.writeMicroseconds(1500 + speedval + u);
+  right_rear_motor.writeMicroseconds(1500 + speedval + u);
+  right_font_motor.writeMicroseconds(1500 - speedval - u);
 }
 
 // Strafe right at fixed speed value.
-void strafe_right (float u1, float u2, float speedval)
+void strafe_right (float u, float speedval)
 {
-  u1 = constrain(u1, -1 * speedval, speedval);
-  u2 = constrain(u2, -1 * speedval, speedval);
-
-  left_font_motor.writeMicroseconds(1500 + speedval + u1);
-  left_rear_motor.writeMicroseconds(1500 - speedval - u1);
-  right_rear_motor.writeMicroseconds(1500 - speedval - u2);
-  right_font_motor.writeMicroseconds(1500 + speedval + u2);
+  u = constrain(u, -1 * speedval, speedval);
+  left_font_motor.writeMicroseconds(1500 + speedval + u);
+  left_rear_motor.writeMicroseconds(1500 - speedval - u);
+  right_rear_motor.writeMicroseconds(1500 - speedval - u);
+  right_font_motor.writeMicroseconds(1500 + speedval + u);
 }
 
 // Pivot counter clockwise at a fixed speed value
@@ -2000,12 +2035,80 @@ void StrafeDistance(float target, boolean isLeft, float initialAngle) {
   } while (timer > 0); // Terminate once within desired tolerance.
   BluetoothSerial.println("Strafing Complete");
   stop();
+}
+
+// Strafe to a specified distance from a wall using average reading from IR sensors.
+void StrafeSonar(float target, boolean isLeft) {
+  // Initialise variables
+  float u = 0;
+  float uLimit[] = { -120, 120}; //Limit maximuim effort signal for sonar. -250,250
+  float Error[] = {0, 0};
+  //float irGains[] = {13.5,5.2,0}; // Kp, Ki, and Kd gains for sonar U=30, T=3
+  float Gains[] = {20, 18, 2.5}; // Kp, Ki, and Kd gains for sonar
+  float Integral = 0;
+  float integralLimit=2;
+  float Derivative = 0.2;
+  float Front[] = {0, 999};
+  float Back[] = {0, 999};
+  float Ultra_Data[]={0,999};
+
+  float ultraSidePrint=0;
+  ULTRA_DIST(Ultra_Data);
+
+  int timer = 300; // Initialise tolerance timer.
+
+  // If we started on the left
+  if(global_isLeft){
+    ServoFaceLeft();
+    delay(500); 
+  }else{
+    ServoFaceRight();
+    delay(500); 
+  }
+
+  // PI control loop with additional straighten correction using gyro.
+  do {
+    // Check which sensors to read based on input parameter.
+    ULTRA_DIST(Ultra_Data);
+    
+     if (!global_isLeft) {
+      ultraSidePrint = Ultra_Data[0] - 4.74-3;//-3cm is the wheel distance.
+    } else {
+      ultraSidePrint = Ultra_Data[0] - 5.64-3;
+    }
+    
+    Error[1] = ultraSidePrint - target; // Error is average difference between IR sensors and target distance.
+
+    PID_Control(Error, Gains, &Derivative, &Integral, &integralLimit, &u, uLimit); // Calculate control effort for driving straight using PID control.
+
+    // Loop exits if error remains in steady state for at least 500ms.
+    if ((abs(Derivative) < 10) && abs(Error[1]) < 0.6) {
+      timer -= 100;
+    }
+    else {
+      timer = 300;
+    }
+    
+
+    //+VE IS CW
+    BluetoothSerial.println((String)" Error: " + Error[1] + (String)", uStrafe: " + u + (String)" derivative: " + Derivative + (String)" timer: " + timer);
+
+    // Check which sensors to read based on input parameter.
+    if (!global_isLeft) {
+      strafe_right(u,150);
+    } else {
+      strafe_left(u,150);
+    }
+
+    delay(100); // ~10Hz
+  } while (timer > 0); // Terminate once within desired tolerance.
+  BluetoothSerial.println("Strafing Complete");
+  stop();
   delay(100);
 
   ServoFaceForward();
   delay(500);
 }
-
 // Strafe to a specified distance from a wall using average reading from IR sensors.
 void StrafeTime(float timeToStrafe, boolean isLeft, float initialAngle) {
   delay(500);
