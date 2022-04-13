@@ -201,8 +201,8 @@ STATE running() {
 //    BluetoothSerial.println((String)"ultra reading is" + ultra);
 //    BluetoothSerial.println((String)"IR right is:" + backR[0]);
 //    delay(100);
-ServoFaceLeft();
-delay(1000);
+//ServoFaceRight();
+//delay(1000);
 WallFollowUltra();
 //WallFollow2();
   
@@ -673,6 +673,20 @@ void WallFollowUltra() {
     ultra = HC_SR04_range();
     BluetoothSerial.println((String)"ultra reading is" + Ultra_Data[0]+(String)"Ultra without Kalman is" + ultra);
  */
+ BR_IR(BR_IR_Data);
+    BL_IR(BL_IR_Data);
+    //ultraFront = HC_SR04_range();
+    ULTRA_DIST(Ultra_Data);
+
+   if (BR_IR_Data[0] < BL_IR_Data[0]) { //indicates whether the wall is on left side or right side
+      //Serial.println("Wall is on the right!");
+      ServoFaceRight();
+      delay(500);
+      else {
+      //Serial.println("Wall is on the left!");
+      ServoFaceLeft();
+      delay(500);
+      }
 
 
 
@@ -695,14 +709,14 @@ void WallFollowUltra() {
     }
     if (BR_IR_Data[0] < BL_IR_Data[0]) { //indicates whether the wall is on left side or right side
       //Serial.println("Wall is on the right!");
-      ServoFaceRight();
+      //ServoFaceRight();
       leftVar = -1;
       ultraSide = Ultra_Data[0];
       short_IR = BR_IR_Data[0];
     }
     else {
       //Serial.println("Wall is on the left!");
-      ServoFaceLeft();
+      //ServoFaceLeft();
       leftVar = 1;
       ultraSide = Ultra_Data[0];
       short_IR = BL_IR_Data[0];
@@ -718,19 +732,19 @@ void WallFollowUltra() {
     //Calculate errors
     //Error top means the error between ultra and wall
     if (leftVar == -1){
-    error_top = target - 5.04 - ultraSide; //have to measure this, lawst time it was 8.76-3.52
-    ultraSidePrint = ultraSide -5.04;
+      ultraSidePrint = ultraSide -4.74;
+      controller(error_top, 2.4, 2, 0.005, 2, 0.5, top_feedback);
+      controller(error_short, 2.4, 2, 0.005, 2, 0.5, short_feedback);
     } else {
-      error_top = target - 5.64 - ultraSide;
       ultraSidePrint = ultraSide - 5.64;
+      controller(error_top, 2.4, 2.4, 0.005, 2, 0.5, top_feedback);
+      controller(error_short, 2.4, 2.4, 0.005, 2, 0.5, short_feedback);
     }
-    error_short = target - short_IR;
+
+    error_top = target-(7.5+ ultraSidePrint); //have to measure this, lawst time it was 8.76-3.52
+    error_short = target - (7.5 + short_IR);
     
     BluetoothSerial.println((String)"left is "+leftVar+(String)", ultraFront is: " + ultraFront + (String)", ultraSide is:  " + ultraSidePrint + (String)", error_top is: " + error_top + (String)", Short IR is: " + short_IR + (String)", error_short is: " + error_short);
-
-    controller(error_top, 5, 0, 0, 2, 0.5, top_feedback);
-    controller(error_short, 5, 0, 0, 2, 0.5, short_feedback);
-    controller(angleMoved, 5, 0, 0, 1, 1, gyro_feedback);
 
     speed_top = constrain(top_feedback[0], -500, 500);
     speed_short = constrain(short_feedback[0], -500, 500);
@@ -748,46 +762,50 @@ void WallFollowUltra() {
 
       if ((leftVar == 1) && (short_IR > ultraSidePrint)) { //Top left
         BluetoothSerial.println("top left");
-        if ((error_top > 0) && (error_short > 0)) {
-          BluetoothSerial.println("top left too close to wall");
-          drive_forward(speed_top, speed_short, 0, 150);
-        } else if ((error_top < 0) && (error_short < 0)) {
-          BluetoothSerial.println("top left too far to wall");
-          drive_forward(abs(speed_top), speed_short, 0, 150);
-        } else {
-          BluetoothSerial.println("top left about the right distance from wall");
-          drive_forward(speed_top, abs(speed_short), 0, 150);
-        }
+        drive_forward((abs(speed_top)+10), speed_short, 0, 100);
+//        if ((error_top > 0) && (error_short > 0)) {
+//          BluetoothSerial.println("top left too close to wall");
+//          drive_forward(speed_top, speed_short, 0, 150);
+//        } else if ((error_top < 0) && (error_short < 0)) {
+//          BluetoothSerial.println("top left too far to wall");
+//          drive_forward(abs(speed_top), speed_short, 0, 150);
+//        } else {
+//          BluetoothSerial.println("top left about the right distance from wall");
+//          drive_forward(speed_top, abs(speed_short), 0, 150);
+//        }
       }
       else if ((leftVar == 1) && (short_IR < ultraSidePrint)) { //bottom left
         BluetoothSerial.println("bottom left");
-        if ((error_top > 0) && (error_short > 0)) {
-          drive_forward(speed_top, abs(speed_short), 0, 150);
-        } else if ((error_top < 0) && (error_short < 0)) {
-          drive_forward(speed_top, abs(speed_short), 0, 150);
-        } else {
-          drive_forward(speed_top, abs(speed_short), 0, 150);
-        }
+        drive_forward(speed_top, abs(speed_short), 0, 100);
+//        if ((error_top > 0) && (error_short > 0)) {
+//          drive_forward(speed_top, abs(speed_short), 0, 150);
+//        } else if ((error_top < 0) && (error_short < 0)) {
+//          drive_forward(speed_top, abs(speed_short), 0, 150);
+//        } else {
+//          drive_forward(speed_top, abs(speed_short), 0, 150);
+//        }
       }
       else if ((leftVar == -1) && (short_IR > ultraSidePrint)) { //top right
         BluetoothSerial.println("top right");
-        if ((error_top > 0) && (error_short > 0)) {
-          drive_forward(speed_short, abs(speed_top), 0, 150);
-        } else if ((error_top < 0) && (error_short < 0)) {
-          drive_forward(speed_short, abs(speed_top), 0, 150);
-        } else {
-          drive_forward(speed_short, abs(speed_top), 0, 150);
-        }
+        drive_forward(speed_short, abs(speed_top), 0, 100);
+//        if ((error_top > 0) && (error_short > 0)) {
+//          drive_forward(speed_short, abs(speed_top), 0, 150);
+//        } else if ((error_top < 0) && (error_short < 0)) {
+//          drive_forward(speed_short, abs(speed_top), 0, 150);
+//        } else {
+//          drive_forward(speed_short, abs(speed_top), 0, 150);
+//        }
       }
       else { //bottom right
         BluetoothSerial.println("bottom right");
-        if ((error_top > 0) && (error_short > 0)) {
-          drive_forward(abs(speed_short), speed_top, 0, 150);
-        } else if ((error_top < 0) && (error_short < 0)) {
-          drive_forward(abs(speed_short), speed_top, 0, 150);
-        } else {
-          drive_forward(abs(speed_short), speed_top, 0, 150);
-        }
+        drive_forward((abs(speed_short)+8), speed_top, 0, 100);
+//        if ((error_top > 0) && (error_short > 0)) {
+//          drive_forward(abs(speed_short), speed_top, 0, 150);
+//        } else if ((error_top < 0) && (error_short < 0)) {
+//          drive_forward(abs(speed_short), speed_top, 0, 150);
+//        } else {
+//          drive_forward(abs(speed_short), speed_top, 0, 150);
+//        }
       }
 
   }
@@ -952,8 +970,6 @@ void WallFollow() {
           drive_forward(abs(speed_short), speed_long, 0, 150);
         }
       }
-
-
   }
 }
 
@@ -1027,10 +1043,10 @@ void WallFollow2() {
     
     //Error top means the error between ultra and wall
     if (leftVar == -1){
-    error_top = target - 5.04 - Ultra_Data[0]; //have to measure this, lawst time it was 8.76-3.52
+    error_top = target + 5.04 - Ultra_Data[0]; //have to measure this, lawst time it was 8.76-3.52
     ultraSidePrint =  Ultra_Data[0] -5.04;
     } else {
-      error_top = target - 5.64 - Ultra_Data[0];
+      error_top = target + 5.64 - Ultra_Data[0];
       ultraSidePrint = Ultra_Data[0] - 5.64;
     }
     
@@ -1052,14 +1068,14 @@ void WallFollow2() {
       BluetoothSerial.println("gyro drive!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
       drive_forward(0, 0, 0, 150);
     } else {
-      error = ((error_top + error_short) + sin(angleMoved * 3.1415926 / 180)) / 2;
+      error = ((Ultra_Data[0]-short_IR) + sin(angleMoved * 3.1415926 / 180)) / 2;
       //error=((long_IR-short_IR)+sin(angleMoved*3.1415926/180))/2;
-      BluetoothSerial.println((String)"overall error is : " + error + (String)"Sonar distance is: " + ultraSidePrint + (String)", Error is: " + error_top + (String)"Current Short IR is: " + short_IR + (String)", Error is: " + error_short);
+      BluetoothSerial.println((String)"overall error is : " + error + (String)"Sonar distance is: " + ultraSidePrint + (String)", top Error is: " + error_top + (String)"Short IR is: " + short_IR + (String)", Error short is: " + error_short);
 
       //      controller(error, 10,10, 0.05, 1, 0.5, feedback);
       //      controller(error, 15,8, 0.05, 0.8, 0.5, feedback);
       //controller(error, 20, 1.2, 0.05, 0.8, 0.5, feedback);
-      controller(error, 10,0,0, 0.8, 0.5, feedback);
+      controller(error, 50,0,0, 0.8, 0.5, feedback);
 
       adjustment = constrain(feedback[0], -500, 500);
       drive_forward(0, 0,adjustment, 150);
