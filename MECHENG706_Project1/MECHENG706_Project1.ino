@@ -180,19 +180,18 @@ STATE running() {
   BluetoothSerial.println("Started the course.");
   BluetoothSerial.println("=============================================================");
 
-  StrafeSonar(25,1);
-
 // StrafeDistance(15,false,initAngle);
  //altFindCorner();
- SonarFaceWall();
- delay(500);
- WallFollowUltra();
-//AlignToWall(true);
+// SonarFaceWall();
+// delay(500);
+// WallFollowUltra();
+// AlignToWall(true);
 
    //FindCorner();
 //  
 //  BR_IR(backR);
 //  BL_IR(backL);
+
 //
 //  if (backR[0] < backL[0]) { //indicates whether the wall is on left side or right side
 //    //Serial.println("Wall is on the right!");
@@ -208,8 +207,9 @@ STATE running() {
 //  ServoFaceForward();
 //  delay(1000);
 // 
-//  altMiddleLogic();
-//
+    altMiddleLogic();
+    delay(3000);
+    altMiddleLogic();
 //  delay(3000);
 //  BluetoothSerial.println("STOPPED");
   return STOPPED;
@@ -2080,7 +2080,7 @@ void StrafeSonar(float target, boolean isLeft) {
   float uLimit[] = { -120, 120}; //Limit maximuim effort signal for sonar. -250,250
   float Error[] = {0, 0};
   //float irGains[] = {13.5,5.2,0}; // Kp, Ki, and Kd gains for sonar U=30, T=3
-  float Gains[] = {18,1,0}; // Kp, Ki, and Kd gains for sonar
+  float Gains[] = {17,4,0.005}; // Kp, Ki, and Kd gains for sonar
   float Integral = 0;
   float integralLimit=2;
   float Derivative = 0.2;
@@ -2109,11 +2109,13 @@ void StrafeSonar(float target, boolean isLeft) {
     ultra = HC_SR04_range();
 
      if (!global_isLeft) {
-      ultraSidePrint = Ultra_Data[0] - 4.74;//-3cm is the wheel distance.
+      //ultraSidePrint = Ultra_Data[0] - 4.74;//-3cm is the wheel distance.
     } else {
-      ultraSidePrint = Ultra_Data[0] - 5.64;
+      //ultraSidePrint = Ultra_Data[0] - 5.64;
     }
-    
+
+   ultraSidePrint = Ultra_Data[0];
+
     Error[1] = ultraSidePrint - target; // Error is average difference between IR sensors and target distance.
 
     PID_Control(Error, Gains, &Derivative, &Integral, &integralLimit, &u, uLimit); // Calculate control effort for driving straight using PID control.
