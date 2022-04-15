@@ -174,7 +174,12 @@ STATE running() {
   BluetoothSerial.println("Started the course.");
   BluetoothSerial.println("=============================================================");
 
-//gyro_forward(15,initAngle,1);
+
+//  left_font_motor.writeMicroseconds(1500 + 400);
+//  left_rear_motor.writeMicroseconds(1500 + 400);
+//  right_rear_motor.writeMicroseconds(1500 - 400);
+//  right_font_motor.writeMicroseconds(1500 - 400);
+//gyro_forward(-15,initAngle,1);
 
   BluetoothSerial.println("=============================================================");
   BluetoothSerial.println("altFindCorner() start");
@@ -199,7 +204,7 @@ STATE running() {
 //  //
 //
   global_isLeft = 1;
-    BluetoothSerial.println("=============================================================");
+  BluetoothSerial.println("=============================================================");
   BluetoothSerial.println("altMiddleLogic2() start");
   BluetoothSerial.println("=============================================================");
   altMiddleLogic2();
@@ -349,7 +354,7 @@ void altMiddleLogic2(){
   int del_f = 500;
   int del_b = 500;
 
-  float strafeT = 450;
+  float strafeT = 375;
   if (((FR_IR_Data[0] + BR_IR_Data[0]) / 2) > ((FL_IR_Data[0] + BL_IR_Data[0]) / 2)) {
     //wall is on the left
     //StrafeSonar(25, 1);
@@ -459,8 +464,8 @@ void altMiddleLogic2(){
 //    iAngle = gyro_read();
 
     gyro_forward(backwardsmash, iAngle, 1);
-    //StrafeTime(strafeT, true, iAngle);
-    StrafeSonar(35, 0);
+    StrafeTime(strafeT, true, iAngle,300);
+    //StrafeSonar(35, 0);
     drive_backward(0, 0, 0, 150);
     delay(del_b);
     motorstop();
@@ -469,8 +474,8 @@ void altMiddleLogic2(){
     index++;
 
     gyro_forward(forwardsmash, iAngle, 1);
-    //StrafeTime(strafeT, true, iAngle);
-    StrafeSonar(45, 0);
+    StrafeTime(strafeT, true, iAngle,300);
+    //StrafeSonar(45, 0);
     drive_forward(0, 0, 0, 150);
     delay(del_f);
     motorstop();
@@ -479,8 +484,8 @@ void altMiddleLogic2(){
     index++;
 
     gyro_forward(backwardsmash, iAngle, 1);
-    //StrafeTime(strafeT, true, iAngle);
-    StrafeSonar(55, 0);
+    StrafeTime(strafeT, true, iAngle,300);
+    //StrafeSonar(55, 0);
     drive_backward(0, 0, 0, 150);
     delay(del_b);
     motorstop();
@@ -489,8 +494,8 @@ void altMiddleLogic2(){
     index++;
 
     gyro_forward(forwardsmash, iAngle, 1);
-    //StrafeTime(strafeT, true, iAngle);
-    StrafeSonar(65, 0);
+    StrafeTime(strafeT, true, iAngle,300);
+    //StrafeSonar(65, 0);
     drive_forward(0, 0, 0, 150);
     delay(del_f);
     motorstop();
@@ -499,8 +504,8 @@ void altMiddleLogic2(){
     index++;
 
     gyro_forward(backwardsmash, iAngle, 1);
-    //StrafeTime(strafeT, true, iAngle);
-    StrafeSonar(75, 0);
+    StrafeTime(strafeT, true, iAngle,300);
+    //StrafeSonar(75, 0);
     drive_backward(0, 0, 0, 150);
     delay(del_b);
     motorstop();
@@ -509,8 +514,8 @@ void altMiddleLogic2(){
     index++;
 
     gyro_forward(forwardsmash, iAngle, 1);
-    //StrafeTime(strafeT, true, iAngle);
-    StrafeSonar(85, 0);
+    StrafeTime(strafeT, true, iAngle,300);
+    //StrafeSonar(85, 0);
     drive_forward(0, 0, 0, 150);
     delay(del_f);
     motorstop();
@@ -519,8 +524,8 @@ void altMiddleLogic2(){
     index++;
 
     gyro_forward(backwardsmash, iAngle, 1);
-    //StrafeTime(strafeT, true, iAngle);
-    StrafeSonar(95, 0);
+    StrafeTime(strafeT, true, iAngle,300);
+    //StrafeSonar(95, 0);
     drive_backward(0, 0, 0, 150);
     delay(del_b);
     motorstop();
@@ -896,7 +901,7 @@ void altFindCorner() {
   if (ultraDistRight > ultraDistLeft) {
     BluetoothSerial.println("strafe to the left!");
     StrafeDistance(15, true, iAngle);
-    //AlignToWall(false);
+//    AlignToWall(false);
     drive_backward(0, 0, 0, 100);
     delay(500);
     motorstop();
@@ -906,7 +911,7 @@ void altFindCorner() {
   else {
     BluetoothSerial.println("strafe to the right!");
     StrafeDistance(15, false, iAngle);
-    //AlignToWall(true);
+//    AlignToWall(true);
     drive_backward(0, 0, 0, 100);
     delay(500);
     motorstop();
@@ -1149,8 +1154,10 @@ void WallFollowUltra() {
       ultraSidePrint = ultraSide - 6.47;
       error_top = target - (7.15 + ultraSidePrint); //have to measure this, lawst time it was 8.76-3.52
       error_short = target - (7.15 + short_IR);
-      controller(error_top, 95, 0, 0.05, 1, 0.5, top_feedback);
-      controller(error_short, 5, 0.05, 0, 1, 0.5, short_feedback);
+      controller(error_top, 90, 0, 0.05, 1, 0.5, top_feedback);
+      //controller(error_top, 45, 10, 0.05, 1, 0.5, top_feedback);
+      controller(error_short, 0, 0, 0, 1, 0.5, short_feedback);
+      //controller(error_short, 2, 0.05, 0, 1, 0.5, short_feedback);
     }
 
 //    //Calculate errors FOR SPEED 150
@@ -1173,8 +1180,8 @@ void WallFollowUltra() {
     
     BluetoothSerial.println((String)"left is " + leftVar + (String)", ultraSide is:  " + ultraSidePrint + (String)", error_top is: " + error_top + (String)", Short IR is: " + short_IR + (String)", error_short is: " + error_short);
 
-    speed_top = constrain(top_feedback[0], -1*motor_speed, motor_speed);
-    speed_short = constrain(short_feedback[0],-1*motor_speed, motor_speed);
+    speed_top = constrain(top_feedback[0], -1*(500-motor_speed), (500-motor_speed));
+    speed_short = constrain(short_feedback[0],-1*(500-motor_speed),(500-motor_speed));
     speed_gyro = constrain(gyro_feedback[0], -500, 500);
 
     ////BluetoothSerial.println((String)" long IR timer is " + long_feedback[0] + (String)" Short IR timer is" + short_feedback[1]);
@@ -1197,7 +1204,8 @@ void WallFollowUltra() {
       else if ((leftVar == -1) && (short_IR > ultraSidePrint)) { //top right
         BluetoothSerial.println("top right");
         BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_top + (String)" Left Side = " + speed_short);
-        drive_forward(speed_short, abs(speed_top), 0, motor_speed);
+        drive_forward(speed_top, abs(speed_short), 0, motor_speed);
+//        drive_forward(speed_short, abs(speed_top), 0, motor_speed);
 //        /*ADDED CODE*/
 //        BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_short + (String)" Left Side = " + speed_top);
 //        drive_forward(speed_top, abs(speed_short), 0, 100);
@@ -1208,16 +1216,13 @@ void WallFollowUltra() {
       else { //bottom right
         BluetoothSerial.println("bottom right");
         BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_top + (String)" Left Side = " + speed_short);
-        drive_forward(abs(speed_short), speed_top, 0, motor_speed);
+        drive_forward(abs(speed_top), speed_short, 0, motor_speed);
+//        drive_forward(abs(speed_short), speed_top, 0, motor_speed);
 //        /*ADDED CODE*/
 //        BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_short + (String)" Left Side = " + speed_top);
 //        drive_forward(abs(speed_top), speed_short, 0, 100);
 //        /*ENDADDEDCODE*/
       }
-
-    
-    
-    
     }
 
   }
@@ -1557,9 +1562,6 @@ void AlignToWall(boolean isWallOnRight) {
     delay(100); // Loop repeats at a frequency of ~10Hz
   }
 
-
-
-
   motorstop();
   ServoFaceForward();
   delay(500);
@@ -1756,7 +1758,7 @@ void motorstop() //Stop
 }
 
 // PI controller helper function
-void controller(float error, float kp, float ki, float kd, float integral_limit, float error_limit, float feedback[]) {
+void controller(float error, float kp, float ki, float kd, float integral_limit, float error_limit, float controller_feedback[]) {
 
   float integral=0;
   float lastError=0;
@@ -1775,13 +1777,13 @@ void controller(float error, float kp, float ki, float kd, float integral_limit,
 
   // Loop exits if error remains in steady state for at least 500ms.
   if ((derivative == 0) && (error < error_limit)) {
-    feedback[1] -= 100;
+    controller_feedback[1] -= 100;
   }
   else {
-    feedback[1] = 500;
+    controller_feedback[1] = 500;
   }
 
-  feedback[0] = kp * error + ki * integral + kd * derivative;
+  controller_feedback[0] = kp * error + ki * integral + kd * derivative;
 
   //modifying feedback array to be accessed in the higher level function
 
@@ -1789,9 +1791,11 @@ void controller(float error, float kp, float ki, float kd, float integral_limit,
 
 void gyro_forward(float target, float initialAngle, float isMiddle) {
   //target positive for forward, negative for backward
-  delay(500);
-  float angleMoved, GyroAngle, motorval = 0;
-  float feedback[] = {0, 500}; //controller feedback array, where feedback[0] is u and feedback[1] is timer
+  delay(1000);
+  float angleMoved=0;
+  float GyroAngle=0;
+  float motorval = 0;
+  float feedback_one[] = {0, 500}; //controller feedback array, where feedback[0] is u and feedback[1] is timer
   float frontL[] = {0, 999};
   float frontR[] = {0, 999};
   bool backwards = false;
@@ -1811,17 +1815,18 @@ void gyro_forward(float target, float initialAngle, float isMiddle) {
   }
   currentAngle=0;
   initialAngle=0;
-  delay(500);
+
+    BluetoothSerial.println((String)("NEW GYRO FORWARD"));
+
   //BluetoothSerial.println((String)"gyro_forward() target is " + target + " ultra is " + ultra);
   // Terminate once within desired tolerance.
   while (((ultra > target) && !backwards && (isMiddle || ((frontL[0] > 30) && (frontR[0] > 30)))) || ((ultra < target) && backwards && (isMiddle || ((frontL[0] > 30) && (frontR[0] > 30))))) {
     //wrap initial angle
-    
-    if (initialAngle > 90) {
-      initialAngle = initialAngle - 360;
-      init_angle_big=true;
-    }
-    
+//    if (initialAngle > 90) {
+//      initialAngle = initialAngle - 360;
+//      init_angle_big=true;
+//    }
+
     GyroAngle = gyro_read();
     
     if (GyroAngle > 90 && !init_angle_big) {
@@ -1832,22 +1837,18 @@ void gyro_forward(float target, float initialAngle, float isMiddle) {
 
     //Choose controller settings for either forward or backward
     if (backwards) {
-      controller(angleMoved, 75, 0.1, 0, 1, 1, feedback);
-      //        controller(angleMoved, 25, 0, 0, 1, 1, feedback);
-      //controller(angleMoved, 80, 80, 0.005, 1, 2, feedback);
+      controller(angleMoved, 82, 1, 0, 1, 1,  feedback_one);
     } else {
-      //controller(angleMoved, 50, 1, 0.005, 1, 1, feedback);
-      controller(angleMoved, 75, 0.1, 0, 1, 1, feedback);
-      //controller(angleMoved, 20, 0, 0, 1, 1, feedback);
-      //controller(angleMoved,10,0.02,0.005,1.6,1,feedback);
-
+      controller(angleMoved, 82, 1, 0, 1, 1,  feedback_one);
     }
+
+    //feedback_one[0]=0;
      
-    //To account for fluctuations in gyroscope. If the change in error is small, make error 0.
-    if (abs(angleMoved) < 0.75) {
+    //To account for fluctuations in gyroscope. If the change in error is small, make error 0. If the change in error is too big (sudden spike of noise) make error 0.
+    if (abs(angleMoved) < 0.6 || abs(angleMoved)>60) {
       motorval = 0;
     } else {
-      motorval = feedback[0];
+      motorval = feedback_one[0];
     }
 
     //constrain(motorval, -100,100);
@@ -1857,7 +1858,7 @@ void gyro_forward(float target, float initialAngle, float isMiddle) {
       motorval=150;
     }
 
-    BluetoothSerial.println((String)("initial angle is : ") + initialAngle + (String)("angle reading: ") +  GyroAngle + (String)("error: ") + angleMoved + (String)", adjustment: " + motorval);
+    BluetoothSerial.println((String)("initial angle is : ") + initialAngle+(String)"current angle is:" +currentAngle  + (String)("angle reading: ") +  GyroAngle + (String)("error: ") + angleMoved + (String)", adjustment: " + motorval);
 
     if (backwards) {
       drive_backward(0, 0, motorval, 350);
@@ -1865,10 +1866,9 @@ void gyro_forward(float target, float initialAngle, float isMiddle) {
       drive_forward(0, 0, motorval, 350);
     }
 
-
     ultra = HC_SR04_range();
-    FL_IR(frontL);
-    FR_IR(frontR);
+//    FL_IR(frontL);
+//    FR_IR(frontR);
 
     if (millis() - prev_millis > 450) {
       CoordUpdate();
@@ -2564,59 +2564,61 @@ void ServoFaceRight() {
 //=============================================================
 //#pragma region 4.1 IR SENSOR FUNCTIONS
 //=============================================================
-void ULTRA_DIST(float output[])
+void ULTRA_DIST(float ultra_output[])
 {
   float distance = HC_SR04_range();
-  Kalman(distance, output, 5);
+  Kalman(distance, ultra_output, 5);
 }
 
-
-
-void FR_IR(float output[])
+void FR_IR(float FR_IRoutput[])
 {
   int signalADC = analogRead(frontR_IR);
   float distance = 15832 * pow(signalADC, -1.21);
   distance = constrain(distance, 1, 80);
-  Kalman(distance, output, 5);
+  Kalman(distance, FR_IRoutput, 5);
 }
 
-void FL_IR(float output[])
+void FL_IR(float FL_IRoutput[])
 {
   int signalADC = analogRead(frontL_IR);
   float distance = 16479 * pow(signalADC, -1.21);
   distance = constrain(distance, 1, 80);
-  Kalman(distance, output, 5);
+  Kalman(distance, FL_IRoutput, 5);
 
 }
 
-void BL_IR(float output[])
+void BL_IR(float BL_IR_output[])
 {
   int signalADC = analogRead(backL_IR);
   float distance = 7275 * pow(signalADC, -1.19);
   distance = constrain(distance, 1, 30);
-  Kalman(distance, output, 5);
+  Kalman(distance,BL_IR_output, 5);
 }
 
-void BR_IR(float output[])
+void BR_IR(float BR_IR_output[])
 {
   int signalADC = analogRead(backR_IR);
   float distance = 4921 * pow(signalADC, -1.13);
   distance = constrain(distance, 1, 30);
-  Kalman(distance, output, 5);
+  Kalman(distance,BR_IR_output, 5);
 }
 
-void Kalman(double rawdata, float output[], double sensor_noise) {  // Kalman Filter
-  double a_priori_est, a_post_est, a_priori_var, a_post_var, kalman_gain;
-  a_priori_est = output[0];
-  a_priori_var = output[1] + process_noise;
+void Kalman(float rawdata, float kalman_output[], float sensor_noise) {  // Kalman Filter
+  float a_priori_est=0;
+  float a_post_est=0;
+  float a_priori_var=0;
+  float a_post_var=0;
+  float kalman_gain=0;
+  a_priori_est = kalman_output[0];
+  a_priori_var = kalman_output[1] + process_noise;
 
   kalman_gain = a_priori_var / (a_priori_var + sensor_noise);
   a_post_est = a_priori_est + kalman_gain * (rawdata - a_priori_est);
   a_post_est = constrain(a_post_est, 0, 999); // constrain output to prevent infinite values.
   a_post_var = (1 - kalman_gain) * a_priori_var;
   last_var = a_post_var;
-  output[0] = a_post_est;
-  output[1] = a_post_var;
+  kalman_output[0] = a_post_est;
+  kalman_output[1] = a_post_var;
 }
 //#pragma endregion end
 
@@ -2628,9 +2630,15 @@ float gyro_read()
   if (previous_millis == 0) {
     previous_millis = millis();
   }
+  
   T = millis() - previous_millis;
   previous_millis = millis();
-
+  
+  //If functions changed, reset T.
+  if (T>300){
+    T=1;
+  }
+  
   // convert the 0-1023 signal to 0-5v
   // find the voltage offset the value of voltage when gyro is zero (still)
   gyroRate = (analogRead(sensorPin) - gyroZeroVoltage) * gyroSupplyVoltage / 1023;
@@ -2661,56 +2669,13 @@ float gyro_read()
 
   //  Serial.print("Time now: ");
   //  Serial.println(millis());
-  //  Serial.print("Time taken for one loop is: ");
-  //  Serial.println(T);
+  //BluetoothSerial.print((String)"Time taken for one loop is: "+T);
   //Serial.print((String)"Current angle: " + analogRead(sensorPin));
 
   // control the time per loop
   delay (100);
   return currentAngle;
 }
-
-//Angular Velocity
-float gyro_velocity()
-{
-  // convert the 0-1023 signal to 0-5v
-  // find the voltage offset the value of voltage when gyro is zero (still)
-  gyroRate = (analogRead(sensorPin) - gyroZeroVoltage) * gyroSupplyVoltage / 1023;
-
-  // read out voltage divided the gyro sensitivity to calculate the angular velocity
-  float angularVelocity = gyroRate / gyroSensitivity;
-
-  // if the angular velocity is less than the threshold, ignore it
-  if (angularVelocity >= rotationThreshold || angularVelocity <= -rotationThreshold)
-  {
-    // we are running a loop in T. one second will run (1000/T).
-    float angleChange = angularVelocity / (1000 / T);
-    currentAngle += angleChange;
-  }
-
-  // keep the angle between 0-360
-  if (currentAngle < 0)
-  {
-    currentAngle += 360;
-  }
-  else if (currentAngle > 359)
-  {
-    currentAngle -= 360;
-  }
-
-  Serial.print("Potentiometer ");
-  Serial.println(analogRead(sensorPin));
-  Serial.print("Angular velocity: ");
-  Serial.println(angularVelocity);
-  Serial.print("Current angle: ");
-  Serial.println(currentAngle);
-
-  // control the time per loop
-  delay (T);
-  return angularVelocity;
-}
-
-
 
 void speed_change_smooth()
 {
