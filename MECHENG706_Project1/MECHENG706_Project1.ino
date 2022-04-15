@@ -1154,8 +1154,8 @@ void WallFollowUltra() {
       ultraSidePrint = ultraSide - 6.47;
       error_top = target - (7.15 + ultraSidePrint); //have to measure this, lawst time it was 8.76-3.52
       error_short = target - (7.15 + short_IR);
-      controller(error_top, 90, 0, 0.05, 1, 0.5, top_feedback);
-      //controller(error_top, 45, 10, 0.05, 1, 0.5, top_feedback);
+      controller(error_top, 100, 0, 0.05, 1, 0.5, top_feedback);
+      //controller(error_top, 45, 8, 0.05, 1, 0.5, top_feedback);
       controller(error_short, 0, 0, 0, 1, 0.5, short_feedback);
       //controller(error_short, 2, 0.05, 0, 1, 0.5, short_feedback);
     }
@@ -1837,9 +1837,9 @@ void gyro_forward(float target, float initialAngle, float isMiddle) {
 
     //Choose controller settings for either forward or backward
     if (backwards) {
-      controller(angleMoved, 82, 1, 0, 1, 1,  feedback_one);
+      controller(angleMoved, 70, 3, 0, 1, 1,  feedback_one);
     } else {
-      controller(angleMoved, 82, 1, 0, 1, 1,  feedback_one);
+      controller(angleMoved, 70, 3, 0, 1, 1,  feedback_one);
     }
 
     //feedback_one[0]=0;
