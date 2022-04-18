@@ -60,6 +60,7 @@ float gyroSensitivity = 0.007;      // gyro sensitivity unit is (mv/degree/secon
 float rotationThreshold = 1.5;      // because of gyro drifting, defining rotation angular velocity  less than this value will not be ignored
 float gyroRate = 0;                 // read out value of sensor in voltage
 float currentAngle = 0;            // current angle calculated by angular velocity integral on
+bool turned = 0;
 
 
 //Ultrasonic Sensor Setup
@@ -168,14 +169,33 @@ STATE running() {
   static unsigned long previous_millis;
   fast_flash_double_LED_builtin();
 
+
+
   /*--------------------------------COURSE START--------------------------------*/
 
   BluetoothSerial.println("=============================================================");
   BluetoothSerial.println("Started the course.");
   BluetoothSerial.println("=============================================================");
-  ////StrafeDistance(15, false, initAngle); //strafe to the right
+//  StrafeDistance(15, false, initAngle); //strafe to the right
 //  StrafeDistance(15, true, initAngle); //strafe to the right
 
+//  float FL_IR_Data[]= {0,999};
+//  while(1){
+//    FL_IR(FL_IR_Data); // Front left IR sensor reading Broken sensor
+//    FL_IR_Data[0]=constrain(FL_IR_Data[0],10,80); //Broken sensor
+//  
+//    BluetoothSerial.println((String)"Front left sensor value is: " + FL_IR_Data[0]);
+//    delay(500);  // actual sensor reading=sensor reading+2.5cm
+//  }
+
+//  float FR_IR_Data[]= {0,999};
+//  while(1){
+//    FR_IR(FR_IR_Data); // Front left IR sensor reading Broken sensor
+//    FR_IR_Data[0]=constrain(FR_IR_Data[0],10,80); //Broken sensor
+//  
+//    BluetoothSerial.println((String)"Front right sensor value is: " + FR_IR_Data[0]);
+//    delay(500);  // actual sensor reading=sensor reading+1cm
+//  }
   
     BluetoothSerial.println("=============================================================");
     BluetoothSerial.println("altFindCorner() start");
@@ -191,9 +211,9 @@ STATE running() {
     BluetoothSerial.println("=============================================================");
     ServoFaceForward();
     delay(1000);
-  //  //
-  //  //
-  //
+    //
+    //
+  
     global_isLeft = 1;
     BluetoothSerial.println("=============================================================");
     BluetoothSerial.println("altMiddleLogic2() start");
@@ -268,7 +288,7 @@ STATE stopped() {
 
 void Coord() {
   x = 200 - (HC_SR04_range() + (12 / 2)); // 12 / 2 is distance between sonar and middle of robot (**TUNING NEEDED**)
-  //BluetoothSerial.print((String)"(x, y) = (" + x +  ", " + y + ")"); //Printing x and y.
+  //BluetoothSerial.print((String)"X = " + x + (String)" Y = " + y); //Printing x and y.
 }
 
 void ISR1() {
@@ -283,38 +303,70 @@ void ISR1() {
 
 void CoordUpdate() {
   float FR_IR_Data[] = {0, 999};
+  float BL_IR_Data[] = {0, 999};
   float FL_IR_Data[] = {0, 999};
   FR_IR(FR_IR_Data); // Front right IR sensor reading
-  FL_IR(FL_IR_Data); // Front left IR sensor reading
+  BL_IR(BL_IR_Data); // Back right IR sensor reading 
+  FL_IR(FL_IR_Data); // Front left IR sensor reading Broken sensor
+
+  FR_IR_Data[0]=constrain(FR_IR_Data[0],10,80);
+  BL_IR_Data[0]=constrain(BL_IR_Data[0],4,30);
+  FL_IR_Data[0]=constrain(FL_IR_Data[0],10,80); //Broken sensor
   //BluetoothSerial.println((String)"in coordsUpdate");
+  
   if (servo_forward) {
     x = 200 - (HC_SR04_range() + (24 / 2)); // 12 / 2 is distance between sonar and middle of robot (**TUNING NEEDED**)
   }
 
-  //BluetoothSerial.println((String)"IR right is:" + FR_IR_Data[0] + (String)"IR left is:" + FL_IR_Data[0]);
-  if (!global_isLeft) {
-    if (FR_IR_Data[0] > 79) {
-      y = 120 - (7.5 + FL_IR_Data[0]);
-    } else {
-      y = 7.5 + FR_IR_Data[0];
-    }
+//  //BluetoothSerial.println((String)"IR right is:" + FR_IR_Data[0] + (String)"IR left is:" + FL_IR_Data[0]);
+//  if (!global_isLeft) {
+//
+//    //lol leaving out the right side for now haha.
+//    if (FR_IR_Data[0] > 79) {    
+//      y = 120 - (7.5 + FL_IR_Data[0]);
+//    } else {
+//      y = 7.5 + FR_IR_Data[0];
+//    }
+//  }
+//  else {
+//   // If front right is out of range, wall is closer on the left    
+//   if (FR_IR_Data[0] > 79) {
+//      if (BL_IR_Data[0] > 30){
+//        // If back left is out of range estimate the y coordinates
+//        // Only happens when we are in 30-40cm away from the left wall. 
+//        y = 35; 
+//      }else{
+//        //Otherwise use the short range left IR to calculate the y coordinate
+//        y = 120 - (7.5 + BL_IR_Data[0]);
+//      }
+//    } else { //else if front right is in range, calculate teh y coordinate based on the front right IR
+//      y = 7.5 + FR_IR_Data[0];
+//    }  
+//  }  
+
+   if (!global_isLeft) {
+     if (FR_IR_Data[0] > 79) {
+      //BluetoothSerial.println((String)"LEFT IR IS BEING USED");
+        y = 120 - (7.5 + FL_IR_Data[0]+2.5);//2.5cm hard calibration for front left IR
+     }else {
+      //BluetoothSerial.println((String)"RIGHT IR IS BEING USED");
+        y = 7.5 + FR_IR_Data[0]+1;//1cm hard calibrat5ion for front right IR
+      }
   }
   else {
     if (FL_IR_Data[0] > 79) {
-      y = 120 - (7.5 + FR_IR_Data[0]);
-    } else {
-      y = 7.5 + FL_IR_Data[0];
+      BluetoothSerial.println((String)"RIGHT IR IS BEING USED");
+      y = 120 - (7.5 + FR_IR_Data[0]+1);
+    }else {
+      y = 7.5 + FL_IR_Data[0]+2.5;
+      BluetoothSerial.println((String)"LEFT IR IS BEING USED");
     }
   }
 
   if (start_printing) {
     //print to Putty serial monitor
     //BluetoothSerial.println("COORDINATES UPDATING!");
-    BluetoothSerial.print("(x, y) = (");
-    BluetoothSerial.print(x);
-    BluetoothSerial.print(", ");
-    BluetoothSerial.print(y);
-    BluetoothSerial.println(")");
+    BluetoothSerial.println((String)"X = " + x + (String)" Y = " + y);
   }
 }
 //#pragma endregion end
@@ -341,26 +393,38 @@ void altMiddleLogic2() {
   int del_f = 500;
   int del_b = 500;
   int del_c = 4950;
+  float coord_mill = millis();
+  float prev_mill = millis();
 
   float strafeT = 320;
   if (((FR_IR_Data[0] + BR_IR_Data[0]) / 2) > ((FL_IR_Data[0] + BL_IR_Data[0]) / 2)) {
     //wall is on the left
     //StrafeSonar(25, 1);
-    StrafeTime(375, false, iAngle, 300);
+    StrafeTime(450, false, iAngle, 300);
+    CoordUpdate();
     drive_forward(0, 0, 0, 150);
     delay(300);
+    CoordUpdate();
     motorstop();
     //delay(200);
     //    iAngle = gyro_read();
     //    delay(200);
 
     //gyro_forward(backwardsmash, iAngle, 1);
-    OpenDriveBackwards();
-    delay(del_c);
+    prev_mill = millis();
+    coord_mill = millis();
+    while (millis() - prev_mill < del_c) {
+      OpenDriveBackward();
+      if (millis() - coord_mill > 400) {
+        CoordUpdate();
+        coord_mill = millis();      
+      }
+    }
     StrafeTime(strafeT, false, iAngle, 300);
-    //StrafeSonar(35, 1);
+    CoordUpdate();
     drive_backward(0, 0, 0, 150);
     delay(del_b);
+    CoordUpdate();
     motorstop();
     //delay(200);
     //iAngle = gyro_read();
@@ -368,90 +432,135 @@ void altMiddleLogic2() {
 
 
     //gyro_forward(forwardsmash, iAngle, 1);
-    OpenDriveForward();
-    delay(del_c);
+    CoordUpdate();
+    prev_mill = millis();
+    coord_mill = millis();
+    while (millis() - prev_mill < del_c) {
+      OpenDriveForward();
+      if (millis() - coord_mill > 400) {
+        CoordUpdate();
+        coord_mill = millis();      
+      }
+    }
     StrafeTime(strafeT, false, iAngle, 300);
-    //StrafeSonar(45, 1);
+    CoordUpdate();
     drive_forward(0, 0, 0, 150);
     delay(del_f);
+    CoordUpdate();
     motorstop();
     //delay(200);
     //iAngle = gyro_read();
     index++;
 
     //gyro_forward(backwardsmash, iAngle, 1);
-    OpenDriveBackwards();
-    delay(del_c);
+    prev_mill = millis();
+    coord_mill = millis();
+    while (millis() - prev_mill < del_c) {
+      OpenDriveBackward();
+      if (millis() - coord_mill > 400) {
+        CoordUpdate();
+        coord_mill = millis();      
+      }
+    }
     StrafeTime(strafeT, false, iAngle, 300);
-    //StrafeSonar(55, 1);
+    CoordUpdate();
     drive_backward(0, 0, 0, 150);
     delay(del_b);
+    CoordUpdate();
     motorstop();
     //delay(200);
     //iAngle = gyro_read();
     index++;
 
     //gyro_forward(forwardsmash, iAngle, 1);
-    OpenDriveForward();
-    delay(del_c);
+    prev_mill = millis();
+    coord_mill = millis();
+    while (millis() - prev_mill < del_c) {
+      OpenDriveForward();
+      if (millis() - coord_mill > 400) {
+        CoordUpdate();
+        coord_mill = millis();      
+      }
+    }
     StrafeTime(strafeT, false, iAngle, 300);
-    //StrafeSonar(65, 1);
+    CoordUpdate();
     drive_forward(0, 0, 0, 150);
     delay(del_f);
+    CoordUpdate();
     motorstop();
     //delay(200);
     //iAngle = gyro_read();
     index++;
 
     //gyro_forward(backwardsmash, iAngle, 1);
-    OpenDriveBackwards();
-    delay(del_c);
+    prev_mill = millis();
+    coord_mill = millis();
+    while (millis() - prev_mill < del_c) {
+      OpenDriveBackward();
+      if (millis() - coord_mill > 400) {
+        CoordUpdate();
+        coord_mill = millis();      
+      }
+    }
     StrafeTime(strafeT, false, iAngle, 300);
-    //StrafeSonar(75, 1);
+    CoordUpdate();
     drive_backward(0, 0, 0, 150);
     delay(del_b);
+    CoordUpdate();
     motorstop();
     //delay(200);
     //iAngle = gyro_read();
     index++;
 
     //gyro_forward(forwardsmash, iAngle, 1);
-    OpenDriveForward();
-    delay(del_c);
+    prev_mill = millis();
+    coord_mill = millis();
+    while (millis() - prev_mill < del_c) {
+      OpenDriveForward();
+      if (millis() - coord_mill > 400) {
+        CoordUpdate();
+        coord_mill = millis();      
+      }
+    }
     StrafeTime(strafeT, false, iAngle, 300);
+    CoordUpdate();
     //StrafeSonar(85, 1);
     drive_forward(0, 0, 0, 150);
     delay(del_f);
+    CoordUpdate();
     motorstop();
    // delay(200);
     //iAngle = gyro_read();
     index++;
+//
+//    //gyro_forward(backwardsmash, iAngle, 1);
+//    OpenDriveBackward();
+//    delay(del_c);
+//    StrafeTime(strafeT, false, iAngle, 300);
+//    //StrafeSonar(95, 1);
+//    drive_backward(0, 0, 0, 150);
+//    delay(del_b);
+//    motorstop();
+//    //delay(200);
+//    //iAngle = gyro_read();
+//    index++;
+//
+//    //gyro_forward(forwardsmash, iAngle, 1);
+//    OpenDriveForward();
+//    delay(5500);
+////    //StrafeTime(strafeT, false, iAngle);
+////    drive_forward(0, 0, 0, 150);
+////    delay(del_f);
+//    motorstop();
+////    delay(200);
+//    //iAngle = gyro_read();
+//    index++;
 
-    //gyro_forward(backwardsmash, iAngle, 1);
-    OpenDriveBackwards();
-    delay(del_c);
-    StrafeTime(strafeT, false, iAngle, 300);
-    //StrafeSonar(95, 1);
-    drive_backward(0, 0, 0, 150);
-    delay(del_b);
-    motorstop();
-    //delay(200);
-    //iAngle = gyro_read();
-    index++;
-
-    //gyro_forward(forwardsmash, iAngle, 1);
-    OpenDriveForward();
-    delay(5500);
-//    //StrafeTime(strafeT, false, iAngle);
-//    drive_forward(0, 0, 0, 150);
-//    delay(del_f);
-    motorstop();
-//    delay(200);
-    //iAngle = gyro_read();
-    index++;
-
+    CoordUpdate();
     ServoFaceLeft();
-    TurnByAngle(160);
+    CoordUpdate();
+    TurnByAngle(170);
+    turned = 1;
 
     StrafeDistance(15, true, iAngle); //false means right
     drive_backward(0, 0, 0, 150);
@@ -466,7 +575,7 @@ void altMiddleLogic2() {
   else {
     //wall is on the right
     //StrafeSonar(25, 0);
-    StrafeTime(strafeT, true, iAngle, 300);    
+    StrafeTime(450, true, iAngle, 300);    
     drive_forward(0, 0, 0, 150);
     delay(305);
     //    motorstop();
@@ -474,8 +583,15 @@ void altMiddleLogic2() {
     //    iAngle = gyro_read();
 
     //gyro_forward(backwardsmash, iAngle, 1);
-    OpenDriveBackwards();
-    delay(del_c);
+    prev_mill = millis();
+    coord_mill = millis();
+    while (millis() - prev_mill < del_c) {
+      OpenDriveBackward();
+      if (millis() - coord_mill > 400) {
+        CoordUpdate();
+        coord_mill = millis();      
+      }
+    }
     StrafeTime(375, true, iAngle, 300);
     //StrafeSonar(35, 0);
     drive_backward(0, 0, 0, 150);
@@ -486,8 +602,15 @@ void altMiddleLogic2() {
     index++;
 
     //gyro_forward(forwardsmash, iAngle, 1);
-    OpenDriveForward();
-    delay(del_c);
+    prev_mill = millis();
+    coord_mill = millis();
+    while (millis() - prev_mill < del_c) {
+      OpenDriveForward();
+      if (millis() - coord_mill > 400) {
+        CoordUpdate();
+        coord_mill = millis();      
+      }
+    }
     StrafeTime(strafeT, true, iAngle, 300);
     //StrafeSonar(45, 0);
     drive_forward(0, 0, 0, 150);
@@ -496,9 +619,18 @@ void altMiddleLogic2() {
     //delay(100);
     //iAngle = gyro_read();
     index++;
+
+    
     //gyro_forward(backwardsmash, iAngle, 1);
-    OpenDriveBackwards();
-    delay(del_c);
+    prev_mill = millis();
+    coord_mill = millis();
+    while (millis() - prev_mill < del_c) {
+      OpenDriveBackward();
+      if (millis() - coord_mill > 400) {
+        CoordUpdate();
+        coord_mill = millis();      
+      }
+    }
     StrafeTime(strafeT, true, iAngle, 300);
     //StrafeSonar(55, 0);
     drive_backward(0, 0, 0, 150);
@@ -509,8 +641,15 @@ void altMiddleLogic2() {
     index++;
 
     //gyro_forward(forwardsmash, iAngle, 1);
-    OpenDriveForward();
-    delay(del_c);
+    prev_mill = millis();
+    coord_mill = millis();
+    while (millis() - prev_mill < del_c) {
+      OpenDriveForward();
+      if (millis() - coord_mill > 400) {
+        CoordUpdate();
+        coord_mill = millis();      
+      }
+    }
     StrafeTime(strafeT, true, iAngle, 300);
     //StrafeSonar(65, 0);
     drive_forward(0, 0, 0, 150);
@@ -521,8 +660,15 @@ void altMiddleLogic2() {
     index++;
 
     //gyro_forward(backwardsmash, iAngle, 1);
-    OpenDriveBackwards();
-    delay(del_c);
+    prev_mill = millis();
+    coord_mill = millis();
+    while (millis() - prev_mill < del_c) {
+      OpenDriveBackward();
+      if (millis() - coord_mill > 400) {
+        CoordUpdate();
+        coord_mill = millis();      
+      }
+    }
     StrafeTime(strafeT, true, iAngle, 300);
     //StrafeSonar(75, 0);
     drive_backward(0, 0, 0, 150);
@@ -533,8 +679,15 @@ void altMiddleLogic2() {
     index++;
 
     //gyro_forward(forwardsmash, iAngle, 1);
-    OpenDriveForward();
-    delay(del_c);
+    prev_mill = millis();
+    coord_mill = millis();
+    while (millis() - prev_mill < del_c) {
+      OpenDriveForward();
+      if (millis() - coord_mill > 400) {
+        CoordUpdate();
+        coord_mill = millis();      
+      }
+    }
     StrafeTime(strafeT, true, iAngle, 300);
     //StrafeSonar(85, 0);
     drive_forward(0, 0, 0, 150);
@@ -544,37 +697,40 @@ void altMiddleLogic2() {
     //iAngle = gyro_read();
     index++;
 
-    //gyro_forward(backwardsmash, iAngle, 1);
-    OpenDriveBackwards();
-    delay(del_c);
-    StrafeTime(strafeT, true, iAngle, 300);
-    //StrafeSonar(95, 0);
-    drive_backward(0, 0, 0, 150);
-    delay(del_b);
-    motorstop();
-  //  delay(100);
-    //iAngle = gyro_read();
-    index++;
+//    //gyro_forward(backwardsmash, iAngle, 1);
+//    OpenDriveBackward();
+//    delay(del_c);
+//    StrafeTime(strafeT, true, iAngle, 300);
+//    //StrafeSonar(95, 0);
+//    drive_backward(0, 0, 0, 150);
+//    delay(del_b);
+//    motorstop();
+//  //  delay(100);
+//    //iAngle = gyro_read();
+//    index++;
+//
+//    // gyro_forward(forwardsmash, iAngle, 1);
+//    OpenDriveForward();
+//    delay(5500);
+////    //StrafeTime(strafeT, true, iAngle);
+////    drive_forward(0, 0, 0, 150);
+////    delay(del_f);
+//    motorstop();
+////    delay(100);
+//    //iAngle = gyro_read();
+//    index++;
 
-    // gyro_forward(forwardsmash, iAngle, 1);
-    OpenDriveForward();
-    delay(5500);
-//    //StrafeTime(strafeT, true, iAngle);
-//    drive_forward(0, 0, 0, 150);
-//    delay(del_f);
-    motorstop();
-//    delay(100);
-    //iAngle = gyro_read();
-    index++;
+    CoordUpdate();
+    ServoFaceRight();
+    CoordUpdate();    
 
     ServoFaceRight();
-    TurnByAngle(165);
-
-      StrafeDistance(15, false, iAngle); //false means right
-      drive_backward(0, 0, 0, 150);
-      delay(700);
-      StrafeDistance(15, false, iAngle); //false means right
-      //AlignToWall(true);//false is left, true is right
+    TurnByAngle(170);
+    StrafeDistance(15, false, iAngle); //false means right
+    drive_backward(0, 0, 0, 150);
+    delay(700);
+    StrafeDistance(15, false, iAngle); //false means right
+    //AlignToWall(true);//false is left, true is right
 
 //    StrafeDistance(15, true, iAngle); //false means right
 //    AlignToWall(false);//false is left, true is right
@@ -839,9 +995,9 @@ void altFindCorner() {
   ultraDist = HC_SR04_range(); // Get initial sonar reading.
 
   //Orientate the robot to face a wall 60cm away
-  BluetoothSerial.println("Orientate the robot to face a wall 60cm away");
+  //BluetoothSerial.println("Orientate the robot to face a wall 60cm away");
   while (ultraDist > 60) {
-    BluetoothSerial.println((String)"Sonar Reading: " + ultraDist);
+    //BluetoothSerial.println((String)"Sonar Reading: " + ultraDist);
     cw();
     ultraDist = HC_SR04_range();
     delay(50);
@@ -864,7 +1020,7 @@ void altFindCorner() {
 
   //Check if left wall is closer
   if (ultraDistLeft < ultraDistRight) {
-    BluetoothSerial.println("Strafe into left wall!");
+    //BluetoothSerial.println("Strafe into left wall!");
     StrafeTime(3000, true, iAngle, 300);
     iAngle = gyro_read();
     //AlignToWall(false);
@@ -878,12 +1034,12 @@ void altFindCorner() {
     //AlignToWall(true);
   }
   //delay(500);
-  BluetoothSerial.println("Gyro forward start");
+//  BluetoothSerial.println("Gyro forward start");
 //  OpenDriveForward();
 //  delay(1500);
 //  motorstop();
   gyro_forward(15, iAngle, 1);
-  BluetoothSerial.println("Gyro forward end");
+  //BluetoothSerial.println("Gyro forward end");
 
   // Check distance from left/right walls using sonar.
 
@@ -1109,12 +1265,12 @@ void WallFollowUltra() {
   BL_IR(BL_IR_Data);
   ULTRA_DIST(Ultra_Data);
 
-  BluetoothSerial.println((String)"PLEASE PRINT" + start_printing);
+ // BluetoothSerial.println((String)"PLEASE PRINT" + start_printing);
   if (start_printing == 0) {
     start_printing = 1;
     x = 0;
     y = 0;
-    BluetoothSerial.println((String)"in print = 1 loop");
+   // BluetoothSerial.println((String)"in print = 1 loop");
   }
 
   if (BR_IR_Data[0] < BL_IR_Data[0]) { //indicates whether the wall is on left side or right side
@@ -1128,12 +1284,7 @@ void WallFollowUltra() {
 
   while ((millis() - starting) <  10000) { //ultraFront > 15
     if (millis() - prev_millis > 400) {
-      BluetoothSerial.println("COORDINATES UPDATING!");
-      BluetoothSerial.print("(x, y) = (");
-      BluetoothSerial.print(x);
-      BluetoothSerial.print(", ");
-      BluetoothSerial.print(y);
-      BluetoothSerial.println(")");
+      BluetoothSerial.println((String)"X = " + x + (String)" Y = " + y);
       prev_millis = millis();
     }
 
@@ -1142,12 +1293,13 @@ void WallFollowUltra() {
     BL_IR(BL_IR_Data);
     ULTRA_DIST(Ultra_Data);
 
-    x = 12 + ((millis() - starting) / 10000) * 200;
-    if (index < 4) {
-      y = Ultra_Data[0] + 2;
+    if (turned) {
+      x = 200 - (12 + ((millis() - starting) / 10000) * 170);
+      y = 120 - (Ultra_Data[0] + 2);
     }
     else {
-      y = 120 - (Ultra_Data[0] + 2);
+      x = 12 + ((millis() - starting) / 10000) * 170;
+      y = Ultra_Data[0] + 2;
     }
 
     travel_angle = gyro_read();
@@ -1187,12 +1339,22 @@ void WallFollowUltra() {
 
     } else {
       ultraSidePrint = ultraSide - 6.47;
+//      ultraSidePrint = ultraSide - 8.47;
       error_top = target - (7.15 + ultraSidePrint); //have to measure this, last time it was 8.76-3.52
       error_short = target - (7.15 + short_IR);
 //      controller(error_top, 35,3.75, 0.005, 2, 0.5, top_feedback);
 //      controller(error_short,1, 0.5, 0, 2, 0.5, short_feedback);
+
       controller(error_top, 30.5, 3.4, 0.005, 2, 0.5, top_feedback);
-      controller(error_short,1, 0.5, 0.005, 2, 0.5, short_feedback);
+      controller(error_short,1, 0.5, 0.01, 2, 0.5, short_feedback);
+      
+//      //For speed 100 and battery level about 70%
+//      controller(error_top, 30, 3.4, 0.5, 2, 0.5, top_feedback);
+//      controller(error_short,1, 0, 0, 2, 0.5, short_feedback);
+      
+//      //For speed 100 and battery level about 70%
+//      controller(error_top, 30.5, 3.4, 0.005, 2, 0.5, top_feedback);
+//      controller(error_short,1, 0.5, 0.01, 2, 0.5, short_feedback);
       //      controller(error_top, 100, 0, 0.05, 1, 0.5, top_feedback);
       //      //controller(error_short, 2, 0.05, 0, 1, 0.5, short_feedback);
     }
@@ -1215,7 +1377,7 @@ void WallFollowUltra() {
     //      controller(error_short, 2.5, 0.03, 0, 2, 0.5, short_feedback);
     //    }
 
-    BluetoothSerial.println((String)"left is " + leftVar + (String)", ultraSide is:  " + ultraSidePrint + (String)", error_top is: " + error_top + (String)", Short IR is: " + short_IR + (String)", error_short is: " + error_short);
+    //BluetoothSerial.println((String)"left is " + leftVar + (String)", ultraSide is:  " + ultraSidePrint + (String)", error_top is: " + error_top + (String)", Short IR is: " + short_IR + (String)", error_short is: " + error_short);
 
     speed_top = constrain(top_feedback[0], -1 * (500 - motor_speed), (500 - motor_speed));
     speed_short = constrain(short_feedback[0], -1 * (500 - motor_speed), (500 - motor_speed));
@@ -1224,28 +1386,28 @@ void WallFollowUltra() {
     //If errors are small enough fluctuating between positive and negative, make the right and left motors same power
 
     if ( (abs(error_top) < 0.4) && (abs(error_short) < 0.4) ) {
-      BluetoothSerial.println("gyro drive forward!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+      //BluetoothSerial.println("gyro drive forward!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
       drive_forward(5, 0, 0, 150);
     } else {
       if ((leftVar == 1) && (short_IR > ultraSidePrint)) { //Top left
-        BluetoothSerial.println("top left");
-        BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_short + (String)" Left Side = " + speed_top);
+        //BluetoothSerial.println("top left");
+        //BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_short + (String)" Left Side = " + speed_top);
         drive_forward(abs(speed_top), speed_short, 0, motor_speed);
       }
       else if ((leftVar == 1) && (short_IR < ultraSidePrint)) { //bottom left
-        BluetoothSerial.println("bottom left");
-        BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_short + (String)" Left Side = " + speed_top);
+       // BluetoothSerial.println("bottom left");
+       // BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_short + (String)" Left Side = " + speed_top);
         drive_forward(speed_top, abs(speed_short), 0, motor_speed);
       }
       else if ((leftVar == -1) && (short_IR > ultraSidePrint)) { //top right
-        BluetoothSerial.println("top right");
-        BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_top + (String)" Left Side = " + speed_short);
-        drive_forward(speed_short, abs(speed_top), 0, 100);
+        //BluetoothSerial.println("top right");
+        //BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_top + (String)" Left Side = " + speed_short);
+        drive_forward(speed_short, abs(speed_top), 0, motor_speed);
       }
       else { //bottom right
-        BluetoothSerial.println("bottom right");
-        BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_top + (String)" Left Side = " + speed_short);
-        drive_forward(abs(speed_short), speed_top, 0, 100);
+        //BluetoothSerial.println("bottom right");
+        //BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_top + (String)" Left Side = " + speed_short);
+        drive_forward(abs(speed_short), speed_top, 0, motor_speed);
       }
     }
   }
@@ -1858,7 +2020,7 @@ void gyro_forward(float target, float initialAngle, float isMiddle) {
   currentAngle = 0;
   initialAngle = 0;
 
-  BluetoothSerial.println((String)("NEW GYRO FORWARD"));
+ // BluetoothSerial.println((String)("NEW GYRO FORWARD"));
 
   //BluetoothSerial.println((String)"gyro_forward() target is " + target + " ultra is " + ultra);
   // Terminate once within desired tolerance.
@@ -1931,7 +2093,7 @@ void gyro_forward(float target, float initialAngle, float isMiddle) {
     //      }
     //      ccw_that_fixes_itself(motorval);
     //    }
-    BluetoothSerial.println((String)("initial angle is : ") + initialAngle + (String)"current angle is:" + currentAngle  + (String)("angle reading: ") +  GyroAngle + (String)("error: ") + angleMoved + (String)", adjustment: " + motorval);
+    //BluetoothSerial.println((String)("initial angle is : ") + initialAngle + (String)"current angle is:" + currentAngle  + (String)("angle reading: ") +  GyroAngle + (String)("error: ") + angleMoved + (String)", adjustment: " + motorval);
 
     if (backwards) {
       drive_backward(0, 0, motorval, 350);
@@ -2312,7 +2474,7 @@ void StrafeDistance(float target, boolean isLeft, float initialAngle) {
   float irError[] = {0, 0};
   //float irGains[] = {13.5,5.2,0}; // Kp, Ki, and Kd gains for sonar U=30, T=3
   // float irGains[] = {27, 18, 2.5}; // Kp, Ki, and Kd gains for sonar
-  float irGains[] = {25.5, 22, 2.5}; // Kp, Ki, and Kd gains for sonar
+  float irGains[] = {26, 21, 5}; // Kp, Ki, and Kd gains for sonar
   float irIntegral = 0;
   float irDerivative = 0.2;
   float irFront[] = {0, 999};
@@ -2499,7 +2661,7 @@ void StrafeSonar(float target, boolean isLeft) {
   delay(500);
 }
 
-void OpenDriveBackwards() {
+void OpenDriveBackward() {
 //  left_font_motor.writeMicroseconds(1500 - 419);
 //  left_rear_motor.writeMicroseconds(1500 - 419);
 //  right_rear_motor.writeMicroseconds(1500 + 400);
@@ -2579,6 +2741,7 @@ void StrafeTime(float timeToStrafe, boolean isLeft, float initialAngle, float st
       right_rear_motor.writeMicroseconds(1500 + ( strafeSpeed - angleEffort));
       right_font_motor.writeMicroseconds(1500 - ( strafeSpeed + angleEffort));
     }
+    CoordUpdate();
     delay(100); // ~10Hz
   } while (timeToStrafe > 0); // Terminate once within desired tolerance.
 
