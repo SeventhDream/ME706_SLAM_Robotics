@@ -1015,14 +1015,14 @@ void altFindCorner() {
   //Check if left wall is closer
   if (ultraDistLeft < ultraDistRight) {
     //BluetoothSerial.println("Strafe into left wall!");
-    StrafeTime(3000, true, iAngle, 300);
+    StrafeTime(4000, true, iAngle, 300);
     iAngle = gyro_read();
     //AlignToWall(false);
     //StrafeTime(150, false, iAngle, 250);
   }
   else {
     BluetoothSerial.println("Strafe into left wall!");
-    StrafeTime(3000, false, iAngle, 300);
+    StrafeTime(4000, false, iAngle, 300);
     iAngle = gyro_read();
     //StrafeTime(150, true, iAngle, 250);
     //AlignToWall(true);
