@@ -206,30 +206,30 @@ STATE running() {
     BluetoothSerial.println("WallFollowUltra() start");
     BluetoothSerial.println("=============================================================");
     WallFollowUltra();
-    BluetoothSerial.println("=============================================================");
-    BluetoothSerial.println("ServoFaceForward() start");
-    BluetoothSerial.println("=============================================================");
-    ServoFaceForward();
-    delay(1000);
-    //
-    //
-  
-    global_isLeft = 1;
-    BluetoothSerial.println("=============================================================");
-    BluetoothSerial.println("altMiddleLogic2() start");
-    BluetoothSerial.println("=============================================================");
-    altMiddleLogic2();
-  
-  //  BluetoothSerial.println("=============================================================");
-  //  BluetoothSerial.println("altMiddleLogic() start");
-  //  BluetoothSerial.println("=============================================================");
-  //  altMiddleLogic();
-  
-
-    BluetoothSerial.println("=============================================================");
-    BluetoothSerial.println("WallFollowUltra() start");
-    BluetoothSerial.println("=============================================================");
-    WallFollowUltra();
+//    BluetoothSerial.println("=============================================================");
+//    BluetoothSerial.println("ServoFaceForward() start");
+//    BluetoothSerial.println("=============================================================");
+//    ServoFaceForward();
+//    delay(1000);
+//    //
+//    //
+//  
+//    global_isLeft = 1;
+//    BluetoothSerial.println("=============================================================");
+//    BluetoothSerial.println("altMiddleLogic2() start");
+//    BluetoothSerial.println("=============================================================");
+//    altMiddleLogic2();
+//  
+//  //  BluetoothSerial.println("=============================================================");
+//  //  BluetoothSerial.println("altMiddleLogic() start");
+//  //  BluetoothSerial.println("=============================================================");
+//  //  altMiddleLogic();
+//  
+//
+//    BluetoothSerial.println("=============================================================");
+//    BluetoothSerial.println("WallFollowUltra() start");
+//    BluetoothSerial.println("=============================================================");
+//    WallFollowUltra();
 
 
   delay(3000);
@@ -1342,21 +1342,14 @@ void WallFollowUltra() {
 //      ultraSidePrint = ultraSide - 8.47;
       error_top = target - (7.15 + ultraSidePrint); //have to measure this, last time it was 8.76-3.52
       error_short = target - (7.15 + short_IR);
-//      controller(error_top, 35,3.75, 0.005, 2, 0.5, top_feedback);
-//      controller(error_short,1, 0.5, 0, 2, 0.5, short_feedback);
-
-      controller(error_top, 30.5, 3.4, 0.005, 2, 0.5, top_feedback);
-      controller(error_short,1, 0.5, 0.01, 2, 0.5, short_feedback);
       
-//      //For speed 100 and battery level about 70%
-//      controller(error_top, 30, 3.4, 0.5, 2, 0.5, top_feedback);
-//      controller(error_short,1, 0, 0, 2, 0.5, short_feedback);
-      
-//      //For speed 100 and battery level about 70%
+//      For speed 150 and battery level about 70%, adjusting both wheels
 //      controller(error_top, 30.5, 3.4, 0.005, 2, 0.5, top_feedback);
 //      controller(error_short,1, 0.5, 0.01, 2, 0.5, short_feedback);
-      //      controller(error_top, 100, 0, 0.05, 1, 0.5, top_feedback);
-      //      //controller(error_short, 2, 0.05, 0, 1, 0.5, short_feedback);
+
+      //Only taking account of ultrasonic sensor, speed 150, battery 70% for error top
+//      controller(error_top, 9.5,2.8, 0.005, 2, 0.5, top_feedback);
+        controller(error_short,18,7.2,0.005,2,0.5,short_feedback);
     }
 
     //    //Calculate errors FOR SPEED 150
@@ -1377,7 +1370,7 @@ void WallFollowUltra() {
     //      controller(error_short, 2.5, 0.03, 0, 2, 0.5, short_feedback);
     //    }
 
-    //BluetoothSerial.println((String)"left is " + leftVar + (String)", ultraSide is:  " + ultraSidePrint + (String)", error_top is: " + error_top + (String)", Short IR is: " + short_IR + (String)", error_short is: " + error_short);
+    BluetoothSerial.println((String)"left is " + leftVar + (String)", ultraSide is:  " + ultraSidePrint + (String)", error_top is: " + error_top + (String)", Short IR is: " + short_IR + (String)", error_short is: " + error_short);
 
     speed_top = constrain(top_feedback[0], -1 * (500 - motor_speed), (500 - motor_speed));
     speed_short = constrain(short_feedback[0], -1 * (500 - motor_speed), (500 - motor_speed));
@@ -1385,19 +1378,22 @@ void WallFollowUltra() {
     ////BluetoothSerial.println((String)" long IR timer is " + long_feedback[0] + (String)" Short IR timer is" + short_feedback[1]);
     //If errors are small enough fluctuating between positive and negative, make the right and left motors same power
 
-    if ( (abs(error_top) < 0.4) && (abs(error_short) < 0.4) ) {
+    //if ( (abs(error_top) < 0.4) && (abs(error_short) < 0.4) ) {
+    if ( abs(error_top) < 0.3 ) {
       //BluetoothSerial.println("gyro drive forward!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
       drive_forward(5, 0, 0, 150);
     } else {
       if ((leftVar == 1) && (short_IR > ultraSidePrint)) { //Top left
         //BluetoothSerial.println("top left");
         //BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_short + (String)" Left Side = " + speed_top);
-        drive_forward(abs(speed_top), speed_short, 0, motor_speed);
+        //drive_forward(abs(speed_top), speed_short, 0, motor_speed);
+        drive_forward(0,0,speed_short,motor_speed);
       }
       else if ((leftVar == 1) && (short_IR < ultraSidePrint)) { //bottom left
        // BluetoothSerial.println("bottom left");
        // BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_short + (String)" Left Side = " + speed_top);
-        drive_forward(speed_top, abs(speed_short), 0, motor_speed);
+        //drive_forward(speed_top, abs(speed_short), 0, motor_speed);
+        drive_forward(0,0,speed_short,motor_speed);
       }
       else if ((leftVar == -1) && (short_IR > ultraSidePrint)) { //top right
         //BluetoothSerial.println("top right");
@@ -1817,7 +1813,7 @@ void drive_forward(float adjustment1, float adjustment2, float correction, float
   adjustment2 = constrain(adjustment2, -1 * speedval, speedval);
   correction = constrain(correction, -1 * speedval, speedval);
   //BluetoothSerial.println((String)"adjustment 1 is: " + adjustment1 + (String)"adjustment 2 is: " + adjustment2 + (String)"Correction is:" + correction);
-
+  //positive correction, all negative, ccw. vice versa
   left_font_motor.writeMicroseconds(1500 + (speedval + adjustment1 - correction));
   left_rear_motor.writeMicroseconds(1500 + (speedval + adjustment1 - correction));
   right_rear_motor.writeMicroseconds(1500 - (speedval + adjustment2 + correction));
