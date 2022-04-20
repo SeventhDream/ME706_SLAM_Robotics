@@ -191,7 +191,6 @@ STATE running() {
   ServoFaceForward();
   delay(1000);
 
-  //global_isLeft = 1;
   BluetoothSerial.println("=============================================================");
   BluetoothSerial.println("altMiddleLogic2() start");
   BluetoothSerial.println("=============================================================");
@@ -255,12 +254,6 @@ STATE stopped() {
 //=============================================================
 //#pragma region 3.1 COORDINATES
 //=============================================================
-
-void Coord() {
-  x = 200 - (HC_SR04_range() + (12 / 2)); // 12 / 2 is distance between sonar and middle of robot (**TUNING NEEDED**)
-  //BluetoothSerial.print((String)"X = " + x + (String)" Y = " + y); //Printing x and y.
-}
-
 void CoordUpdate() {
   float FR_IR_Data[] = {0, 999};
   float BL_IR_Data[] = {0, 999};
@@ -317,9 +310,7 @@ void altFindCorner() {
   ultraDist = HC_SR04_range(); // Get initial sonar reading.
 
   //Orientate the robot to face a wall 60cm away
-  //BluetoothSerial.println("Orientate the robot to face a wall 60cm away");
   while (ultraDist > 60) {
-    //BluetoothSerial.println((String)"Sonar Reading: " + ultraDist);
     cw();
     ultraDist = HC_SR04_range();
     delay(50);
@@ -342,27 +333,14 @@ void altFindCorner() {
 
   //Check if left wall is closer
   if (ultraDistLeft < ultraDistRight) {
-    //BluetoothSerial.println("Strafe into left wall!");
     StrafeTime(4000, true, iAngle, 300);
     iAngle = gyro_read();
-    //AlignToWall(false);
-    //StrafeTime(150, false, iAngle, 250);
   }
   else {
-    BluetoothSerial.println("Strafe into left wall!");
     StrafeTime(4000, false, iAngle, 300);
     iAngle = gyro_read();
-    //StrafeTime(150, true, iAngle, 250);
-    //AlignToWall(true);
   }
-  //delay(500);
-//  BluetoothSerial.println("Gyro forward start");
-//  OpenDriveForward();
-//  delay(1500);
-//  motorstop();
   gyro_forward(15, iAngle, 1);
-  //BluetoothSerial.println("Gyro forward end");
-
   // Check distance from left/right walls using sonar.
 
   ServoFaceLeft();
@@ -395,7 +373,6 @@ void altFindCorner() {
 
 
   }
-  BluetoothSerial.println("I THINK I AM IN A CORNER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
   ServoFaceLeft();
   delay(500);
@@ -410,9 +387,7 @@ void altFindCorner() {
   iAngle = gyro_read();
   if (ultraDistRight > ultraDistLeft) {
     ServoFaceLeft();
-    BluetoothSerial.println("strafe to the left!");
     StrafeDistance(15, true, iAngle);
-    //    AlignToWall(false);
     drive_backward(0, 0, 0, 150);
     delay(700);
     motorstop();
@@ -420,9 +395,7 @@ void altFindCorner() {
   }
   else {
     ServoFaceRight();
-    BluetoothSerial.println("strafe to the right!");
     StrafeDistance(15, false, iAngle);
-    //    AlignToWall(true);
     drive_backward(0, 0, 0, 150);
     delay(700);
     motorstop();
@@ -430,7 +403,6 @@ void altFindCorner() {
   }
 
   
-  BluetoothSerial.println("Alt find corner finished!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 }
 
 // alternative middle logic with hardcoded behaviour logic
@@ -726,9 +698,7 @@ void altMiddleLogic2() {
     drive_forward(0, 0, 0, 150);
     delay(del_f);
     motorstop();
-   // delay(100);
-    //iAngle = gyro_read();
-    index++;
+=    index++;
 
     CoordUpdate();
     ServoFaceRight();
@@ -740,7 +710,6 @@ void altMiddleLogic2() {
     drive_backward(0, 0, 0, 150);
     delay(700);
     StrafeDistance(15, false, iAngle); //false means right
-    //AlignToWall(true);//false is left, true is right
   }
 }
 
@@ -815,7 +784,6 @@ void WallFollowUltra2() {
     if (travel_angle > 90) {
       travel_angle = travel_angle - 360;
     }
-    //Setting up interupt to start printing coordinates every 0.5sec
 
     if (BR_IR_Data[0] < BL_IR_Data[0]) { //indicates whether the wall is on left side or right side
       leftVar = -1;
@@ -844,48 +812,26 @@ void WallFollowUltra2() {
       error_short = target - (7.09 + short_IR);
     } else {
       ultraSidePrint = ultraSide - 6.47;
-//      ultraSidePrint = ultraSide - 8.47;
       error_top = target - (7.15 + ultraSidePrint); //have to measure this, last time it was 8.76-3.52
       //error_short = target - (7.15 + short_IR);
       error_short = target - (7.5+ short_IR);
       //Only taking account of ultrasonic sensor, speed 150, battery 70% for error top
     }
     
-//For lipo battery max about 65%
+    //For lipo battery max about 65%
     controller(error_short,6.5,7,0.8,1.5,0.3,short_feedback);
-    //BluetoothSerial.println((String)"left is " + leftVar + (String)", ultraSide is:  " + ultraSidePrint + (String)", error_top is: " + error_top + (String)", Short IR is: " + short_IR + (String)", error_short is: " + error_short);
-
       if (leftVar == 1) {
-        //BluetoothSerial.println((String)" Speed Adjustments are: " + (String)" Right Side = " + speed_short + (String)" Left Side = " + speed_top);
         drive_forward_left(short_feedback[0]);
       }
       else {
         drive_forward_right(short_feedback[0]);
       }
-    //}
   }
   motorstop();
 }
 
 
 // Pivot counter clockwise at a fixed speed value
-void ccw_that_fixes_itself (float u)
-{
-  left_font_motor.writeMicroseconds(1500 - 80);
-  left_rear_motor.writeMicroseconds(1500 - 80);
-  right_rear_motor.writeMicroseconds(1500 - 80);
-  right_font_motor.writeMicroseconds(1500 - 80);
-}
-
-void cw_that_fixes_itself (float u)
-{
-  left_font_motor.writeMicroseconds(1500 + 80);
-  left_rear_motor.writeMicroseconds(1500 + 80);
-  right_rear_motor.writeMicroseconds(1500 + 80);
-  right_font_motor.writeMicroseconds(1500 + 80);
-}
-
-
 void ccw ()
 {
   left_font_motor.writeMicroseconds(1500 - speed_val);
@@ -905,7 +851,6 @@ void cw ()
 void drive_forward_left (float adjustment)
 {
   adjustment = constrain(adjustment, -150, 150);
-  //BluetoothSerial.println((String)"adjustment 1 is: " + adjustment);
   left_font_motor.writeMicroseconds(1500 + 350 + adjustment);
   left_rear_motor.writeMicroseconds(1500 + 350 + adjustment);
   right_rear_motor.writeMicroseconds(1500 - 315 + adjustment);
@@ -915,7 +860,6 @@ void drive_forward_left (float adjustment)
 void drive_forward_right (float adjustment)
 {
   adjustment = constrain(adjustment, -150, 150);
-  //BluetoothSerial.println((String)"adjustment 1 is: " + adjustment);
   left_font_motor.writeMicroseconds(1500 + 350 + adjustment);
   left_rear_motor.writeMicroseconds(1500 + 350 + adjustment);
   right_rear_motor.writeMicroseconds(1500 - 320 + adjustment);
@@ -1009,16 +953,8 @@ void gyro_forward(float target, float initialAngle, float isMiddle) {
   currentAngle = 0;
   initialAngle = 0;
 
- // BluetoothSerial.println((String)("NEW GYRO FORWARD"));
-
-  //BluetoothSerial.println((String)"gyro_forward() target is " + target + " ultra is " + ultra);
   // Terminate once within desired tolerance.
   while (((ultra > target) && !backwards && (isMiddle || ((frontL[0] > 30) && (frontR[0] > 30)))) || ((ultra < target) && backwards && (isMiddle || ((frontL[0] > 30) && (frontR[0] > 30))))) {
-    //wrap initial angle
-    //    if (initialAngle > 90) {
-    //      initialAngle = initialAngle - 360;
-    //      init_angle_big=true;
-    //    }
 
     GyroAngle = gyro_read();
 
@@ -1101,9 +1037,7 @@ void PID_Control(float error[], float gains[], float * derivative, float * integ
 // Rotate platform by a specified angle in degrees using PI control (+ve input = clockwise, -ve input = counter-clockwise).
 void TurnByAngle(int turnAngle)
 {
-  //BluetoothSerial.println("=========================================================================================");
-  //BluetoothSerial.println("STARTING TURN BY ANGLE");
-  //BluetoothSerial.println("=======================================================================================");
+  //Reset global current angle variable
   currentAngle = 0;
   previous_millis = millis();
   float angle = 0;
@@ -1154,18 +1088,13 @@ void TurnByAngle(int turnAngle)
       gyroAngle = currentAngle - 360;
     }
 
-    //BluetoothSerial.println((String)"error: " + gyroError[1] + (String)", u: " + angleEffort + (String)" Angle: " + gyroAngle + (String)" wrap: " + wrapCheck);
   }
   motorstop();
-  //BluetoothSerial.println("==============================================================================");
-  //BluetoothSerial.println("TURN BY ANGLE IS COMPLETE!");
-  //BluetoothSerial.println("==============================================================================");
 }
 
 // Strafe to a specified distance from a wall using average reading from IR sensors.
 void StrafeDistance(float target, boolean isLeft, float initialAngle) {
   float actualTarget = target - 7.5 - 1; //-1 for hard calibration
-  //BluetoothSerial.println((String)"Strafing to " + actualTarget + (String)"cm");
   // Initialise variables
   float u = 0;
   float uLimit[] = { -120, 120}; //Limit maximuim effort signal for sonar. -250,250
@@ -1247,7 +1176,6 @@ void StrafeDistance(float target, boolean isLeft, float initialAngle) {
     }
 
     //+VE IS CW
-    //BluetoothSerial.println( (String)" IR is: " + irBack[0] + (String)" Error: " + irError[1] + (String)", uStrafe: " + u + (String)" derivative: " + irDerivative + (String)" gyroerror: " + gyroError[1] + (String)" timer: " + timer);
 
     // Check which sensors to read based on input parameter.
     if (!isLeft) {
@@ -1264,7 +1192,6 @@ void StrafeDistance(float target, boolean isLeft, float initialAngle) {
 
     delay(100); // ~10Hz
   } while (timer > 0); // Terminate once within desired tolerance.
-  //BluetoothSerial.println("Strafing Complete");
   motorstop();
 }
 void OpenDriveBackward() {
@@ -1285,7 +1212,6 @@ void drive_forward(float adjustment1, float adjustment2, float correction, float
   adjustment1 = constrain(adjustment1, -1 * speedval, speedval);
   adjustment2 = constrain(adjustment2, -1 * speedval, speedval);
   correction = constrain(correction, -1 * speedval, speedval);
-  //BluetoothSerial.println((String)"adjustment 1 is: " + adjustment1 + (String)"adjustment 2 is: " + adjustment2 + (String)"Correction is:" + correction);
   //positive correction, all negative, ccw. vice versa
   left_font_motor.writeMicroseconds(1500 + (speedval + adjustment1 - correction));
   left_rear_motor.writeMicroseconds(1500 + (speedval + adjustment1 - correction));
@@ -1297,7 +1223,6 @@ void drive_backward(float adjustment1, float adjustment2, float correction, floa
   adjustment1 = constrain(adjustment1, -1 * speedval, speedval);
   adjustment2 = constrain(adjustment2, -1 * speedval, speedval);
   correction = constrain(correction, -1 * speedval, speedval);
-  //BluetoothSerial.println((String)"adjustment 1 is: " + adjustment1 + (String)"adjustment 2 is: " + adjustment2 + (String)"Correction is:" + correction);
 
   left_font_motor.writeMicroseconds(1500 - (speedval + adjustment1 + correction));
   left_rear_motor.writeMicroseconds(1500 - (speedval + adjustment1 + correction));
@@ -1308,7 +1233,6 @@ void drive_backward(float adjustment1, float adjustment2, float correction, floa
 // Strafe to a specified distance from a wall using average reading from IR sensors.
 void StrafeTime(float timeToStrafe, boolean isLeft, float initialAngle, float strafeSpeed) {
   delay(500);
-  //BluetoothSerial.println((String)"Strafing for " + timeToStrafe + (String)" seconds");
   // Initialise variables
   float angle = 0;
   float angleEffort = 0;
@@ -1352,7 +1276,6 @@ void StrafeTime(float timeToStrafe, boolean isLeft, float initialAngle, float st
     angleEffort = constrain(0, -1 * (500 - strafeSpeed), (500 - strafeSpeed));
 
     //+VE IS CW
-    //BluetoothSerial.println( (String)" STRAFING initial angle is:" + initialAngle + "Gyro is: " + current_Angle + (String)" Error: " + gyroError[1] + (String)", angle effort: " + angleEffort + (String)" timer: " + timer);
 
     // Check which sensors to read based on input parameter.
     if (!isLeft) {
@@ -1530,7 +1453,6 @@ float HC_SR04_range()
   while ( digitalRead(ECHO_PIN) == 0 ) {
     t2 = micros();
     pulse_width = t2 - t1;
-    ////BluetoothSerial.println((String)"Pulse width is: " + pulse_width);
     if ( pulse_width > (MAX_DIST + 1000)) {
       SerialCom->println("HC-SR04: NOT found");
       return;
@@ -1545,7 +1467,6 @@ float HC_SR04_range()
   {
     t2 = micros();
     pulse_width = t2 - t1;
-    ////BluetoothSerial.println((String)"Pulse width is: " + pulse_width);
     if ( pulse_width > (MAX_DIST + 1000) ) {
       SerialCom->println("HC-SR04: Out of range");
       return;
