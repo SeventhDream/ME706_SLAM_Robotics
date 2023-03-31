@@ -1064,7 +1064,7 @@ void TurnByAngle(int turnAngle)
 
     PID_Control(gyroError, gyroGains, &gyroDerivative, &gyroIntegral, &integralLimit, &angleEffort, angleEffortLimit); // Calculate control effort for angle correction using PID control.
 
-    // Loop exits if error remains in steady state for at least 500ms.
+    // Loop exits if error remains in steady state for at least 300ms.
     if ((gyroDerivative < 5) && (abs(gyroError[1]) < 5)) {
       timer -= 100;
     }
@@ -1081,6 +1081,7 @@ void TurnByAngle(int turnAngle)
     delay(100); // Loop repeats at a frequency of ~10Hz
 
     gyroAngle = gyro_read(); // Get current angle reading from gyroscope sensor (range 0 to 359).
+    
     if (currentAngle > 180 && turnAngle > 0) {
       gyroAngle = (gyroAngle - 360);
     }
@@ -1089,7 +1090,7 @@ void TurnByAngle(int turnAngle)
     }
 
   }
-  motorstop();
+  motorstop(); // Stop turning
 }
 
 // Strafe to a specified distance from a wall using average reading from IR sensors.
